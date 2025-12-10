@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\DataFixtures;
+
+use App\Entity\User;
+use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Persistence\ObjectManager;
+use Faker\Factory;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+
+class UserFixtures extends Fixture
+{
+    private UserPasswordHasherInterface $passwordHasher;
+
+    public function __construct(UserPasswordHasherInterface $passwordHasher)
+    {
+        $this->passwordHasher = $passwordHasher;
+    }
+
+    public function load(ObjectManager $manager): void
+    {
+        $faker = Factory::create('fr_FR');
+
+        // Génération des utilisateurs ID 2 → 101
+        for ($id = 2; $id <= 101; $id++) {
+            $user = new User();
+
+            $prenom = $faker->firstName;
+            $nom = $faker->lastName;
+
+            $email = strtolower($prenom . '.' . $nom . $id . '@example.com');
+
+            $user->setEmail($email);
+            $user->setRoles(['ROLE_USER']);
+            $user->setNom($nom);
+            $user->setPrenom($prenom);
+
+            // Hash du mot de passe "password"
+            $hashedPassword = $this->passwordHasher->hashPassword($user, 'password');
+            $user->setPassword($hashedPassword);
+
+            $manager->persist($user);
+        }
+
+        $manager->flush();
+    }
+}
+
