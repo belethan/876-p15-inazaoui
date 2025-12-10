@@ -35,6 +35,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $prenom = null;
 
+    #[ORM\Column(name: 'user_actif', type: 'boolean', options: ['default' => true])]
+    private bool $userActif = true;
+
     #[ORM\Column(type: 'datetime')]
     private \DateTimeInterface $createdAt;
 
@@ -125,6 +128,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPrenom(?string $prenom): self
     {
         $this->prenom = $prenom;
+        return $this;
+    }
+
+    public function isUserActif(): bool
+    {
+        return $this->userActif;
+    }
+
+    public function setUserActif(bool $userActif): self
+    {
+        $this->userActif = $userActif;
+
         return $this;
     }
 
