@@ -36,7 +36,8 @@
                             {% endif %}
 
                             <form method="post" action="{{ path('login') }}" class="mt-4">
-
+                                <input type="hidden" name="_csrf_token"
+                                       value="{{ csrf_token('authenticate') }}">
                                 <div class="mb-4">
                                     <label for="email" class="form-label">
                                         Adresse email <span class="required">*</span>

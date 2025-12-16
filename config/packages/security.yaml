@@ -11,23 +11,25 @@ security:
 
   firewalls:
 
+    # FIREWALL DEV — DOIT AVOIR UN PATTERN
     dev:
+      pattern: ^/(_(profiler|wdt)|css|images|js)/
       security: false
 
+    # FIREWALL PRINCIPAL
     main:
       provider: app_user_provider
       lazy: true
-      user_checker: App\Security\UserChecker
       stateless: false
+      # user_checker: App\Security\UserChecker  # à réactiver plus tard
 
       form_login:
-        login_path: login
-        check_path: login
+        login_path: login        # nom de route (GET)
+        check_path: /login       # chemin HTTP (POST)
         username_parameter: email
         password_parameter: password
         enable_csrf: true
-        default_target_path: home
-        post_only: true
+        success_handler: App\Security\LoginSuccessHandler
 
       logout:
         path: logout
@@ -37,12 +39,12 @@ security:
     ROLE_ADMIN: ROLE_USER
 
   access_control:
-    # Login / Register → publics
-    - { path: ^/login, roles: PUBLIC_ACCESS }
+    # Pages publiques
+    - { path: ^/login$, roles: PUBLIC_ACCESS }
     - { path: ^/register, roles: PUBLIC_ACCESS }
 
-    # Gestion admin complète
+    # Administration
     - { path: ^/admin, roles: ROLE_ADMIN }
 
-    # Toutes les autres routes nécessitent connexion
+    # Tout le reste nécessite une authentification
     - { path: ^/, roles: ROLE_USER }

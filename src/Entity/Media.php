@@ -16,8 +16,8 @@ class Media
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private string $path;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $path = null;
 
     #[ORM\Column(length: 255)]
     private string $title;
@@ -35,12 +35,12 @@ class Media
         return $this->id;
     }
 
-    public function getPath(): string
+    public function getPath(): ?string
     {
         return $this->path;
     }
 
-    public function setPath(string $path): self
+    public function setPath(?string $path): self
     {
         $this->path = $path;
         return $this;

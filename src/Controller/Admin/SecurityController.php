@@ -2,34 +2,25 @@
 
 namespace App\Controller\Admin;
 
-use App\Form\LoginType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Component\HttpFoundation\Response;
 
 class SecurityController extends AbstractController
 {
-    #[Route('/login', name: 'login')]
-    public function login(Request $request, AuthenticationUtils $auth): Response
+    #[Route('/login', name: 'login', methods: ['GET', 'POST'])]
+    public function login(AuthenticationUtils $auth): Response
     {
-        $error = $auth->getLastAuthenticationError();
-        $lastEmail = $auth->getLastUsername();
-
-        $form = $this->createForm(LoginType::class, [
-            'email' => $lastEmail
-        ]);
-
         return $this->render('admin/security/login.html.twig', [
-            'form' => $form,
-            'error' => $error,
+            'last_username' => $auth->getLastUsername(),
+            'error' => $auth->getLastAuthenticationError(),
         ]);
     }
 
     #[Route('/logout', name: 'logout')]
     public function logout(): void
     {
-        // Symfony gère la déconnexion, aucun code ici.
+        // Symfony intercepte cette route
     }
 }
