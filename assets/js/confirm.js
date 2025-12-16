@@ -1,23 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('confirm.js chargé');
-
     const modal = document.getElementById('confirmDeleteModal');
     if (!modal) {
-        console.warn('Modal introuvable');
         return;
     }
 
-    const form  = document.getElementById('confirmDeleteForm');
-    const token = document.getElementById('confirmDeleteToken');
-    const msg   = document.getElementById('confirmDeleteMessage');
-
     modal.addEventListener('show.bs.modal', event => {
         const button = event.relatedTarget;
+        if (!button) {
+            return;
+        }
 
-        if (!button) return;
+        const message = button.getAttribute('data-delete-message');
+        const url = button.getAttribute('data-delete-url');
+        const token = button.getAttribute('data-delete-token');
 
-        form.action = button.dataset.action;
-        token.value = button.dataset.token;
-        msg.textContent = button.dataset.message;
+        // Message
+        const messageEl = document.getElementById('confirmDeleteMessage');
+        if (messageEl && message) {
+            messageEl.textContent = message;
+        }
+
+        // Form action
+        const form = document.getElementById('confirmDeleteForm');
+        if (form && url) {
+            form.action = url;
+        }
+
+        // CSRF
+        const tokenInput = document.getElementById('confirmDeleteToken');
+        if (tokenInput && token) {
+            tokenInput.value = token;
+        }
     });
 });

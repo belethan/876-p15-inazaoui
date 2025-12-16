@@ -3,67 +3,49 @@
 namespace App\Tests\Functional\Security;
 
 use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\TestUserFactory;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AdminAccessTest extends WebTestCase
 {
-    private EntityManagerInterface $em;
-    private UserPasswordHasherInterface $passwordHasher;
-
-    protected function setUp(): void
-    {
-        self::ensureKernelShutdown();
-    }
-
-    private function initServices(): void
-    {
-        $container = self::getContainer();
-
-        $this->em = $container->get(EntityManagerInterface::class);
-        $this->passwordHasher = $container->get(UserPasswordHasherInterface::class);
-
-        $this->em->createQuery('DELETE FROM App\Entity\User u')->execute();
-    }
-
-    private function createUser(string $email, array $roles): void
-    {
-        $user = new User();
-        $user->setEmail($email);
-        $user->setRoles($roles);
-        $user->setUserActif(true);
-        $user->setPassword(
-            $this->passwordHasher->hashPassword($user, 'password123')
-        );
-
-        $this->em->persist($user);
-        $this->em->flush();
-    }
-
     public function testAdminAccessIsDeniedForUser(): void
     {
-        $client = self::createClient();
-        $this->initServices();
+        $client = static::createClient();
+        $em = static::getContainer()->get('doctrine')->getManager();
 
-        $this->createUser('user@test.com', ['ROLE_USER']);
+        // 🔑 Utilisateur non admin avec email UNIQUE
+        $user = new User();
+        $user->setEmail('user_' . uniqid() . '@test.com');
+        $user->setRoles(['ROLE_USER']);
+        $user->setPassword('test'); // valeur factice suffisante pour la DB
 
-        $client->request('GET', '/admin');
+        $em->persist($user);
+        $em->flush();
 
-        self::assertResponseStatusCodeSame(302); // redirection vers login
+        // Authentification
+        $client->loginUser($user);
+
+        // Tentative d’accès à une route admin
+        $client->request('GET', '/admin/media');
+
+        // Accès refusé (utilisateur connecté mais sans rôle)
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testAdminAccessIsGrantedForAdmin(): void
     {
-        $client = self::createClient();
-        $this->initServices();
+        $client = static::createClient();
+        $em = static::getContainer()->get('doctrine')->getManager();
 
-        $this->createUser('admin@test.com', ['ROLE_ADMIN']);
+        // 🔑 Récupère ou crée Ina (ROLE_ADMIN)
+        $admin = TestUserFactory::getOrCreateIna($em);
 
-        $client->request('GET', '/admin');
+        // Authentification admin
+        $client->loginUser($admin);
 
-        // Si la route existe et que l'accès est autorisé
-        self::assertResponseStatusCodeSame(200);
+        // Accès à la route admin
+        $client->request('GET', '/admin/media');
+
+        $this->assertResponseIsSuccessful();
     }
 }
-

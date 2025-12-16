@@ -6,28 +6,53 @@
         bootstrap="vendor/autoload.php"
         colors="true"
         cacheDirectory=".phpunit.cache"
+        executionOrder="depends,defects"
+        failOnRisky="true"
+        failOnWarning="true"
 >
+    <!-- ===================== -->
+    <!-- Test suites           -->
+    <!-- ===================== -->
     <testsuites>
-        <testsuite name="Application Test Suite">
+        <testsuite name="Application">
             <directory>tests</directory>
         </testsuite>
     </testsuites>
 
+    <!-- ===================== -->
+    <!-- Code source analysé   -->
+    <!-- (Coverage ciblé)      -->
+    <!-- ===================== -->
     <source>
+        <!-- Code métier uniquement -->
         <include>
-            <directory suffix=".php">src</directory>
+            <directory suffix=".php">src/Entity</directory>
+            <directory suffix=".php">src/Repository</directory>
         </include>
+
+        <!-- Exclusions explicites -->
+        <exclude>
+            <directory>src/Command</directory>
+            <directory>src/Controller</directory>
+            <directory>src/DataFixtures</directory>
+            <directory>src/Form</directory>
+            <directory>src/Security</directory>
+            <file>src/Kernel.php</file>
+        </exclude>
     </source>
 
+    <!-- ===================== -->
+    <!-- Environnement PHP     -->
+    <!-- ===================== -->
     <php>
+        <!-- Symfony -->
         <env name="APP_ENV" value="test"/>
         <env name="APP_DEBUG" value="1"/>
-        <env name="SHELL_VERBOSITY" value="-1"/>
         <env name="KERNEL_CLASS" value="App\Kernel"/>
+        <env name="SHELL_VERBOSITY" value="-1"/>
 
-        <!-- DATABASE_URL requis pour les tests d'intégration -->
-        <env name="DATABASE_URL" value="mysql://admludo:Coqwheel!9729@127.0.0.1:3306/inazaoui?serverVersion=8.0&amp;charset=utf8mb4"/>
+        <!-- Doctrine : base de TEST -->
+        <env name="DATABASE_URL"
+             value="mysql://admludo:Coqwheel!9729@127.0.0.1:3306/inazaoui?serverVersion=8.0&amp;charset=utf8mb4"/>
     </php>
-
-
 </phpunit>

@@ -11,7 +11,9 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[IsGranted('ROLE_USER')]
 class MediaController extends AbstractController
 {
     #[Route('/admin/media', name: 'admin_media_index')]
@@ -58,38 +60,49 @@ class MediaController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            /** @var UploadedFile $uploadedFile */
+            /** @var UploadedFile|null $uploadedFile */
             $uploadedFile = $form->get('file')->getData();
+
+            if (!$uploadedFile) {
+                $this->addFlash('danger', 'Aucun fichier n’a été envoyé.');
+                return $this->redirectToRoute('admin_media_index');
+            }
 
             // Sécurité utilisateur
             if (!$this->isGranted('ROLE_ADMIN')) {
                 $media->setUser($this->getUser());
             }
 
-            // 1️⃣ Persist pour obtenir un ID
+            // Persist pour obtenir un ID
             $em->persist($media);
             $em->flush();
 
-            // 2️⃣ Génération du nom définitif
+            // Génération du nom définitif
             $extension = $uploadedFile->guessExtension() ?? 'jpg';
             $filename  = sprintf('%04d.%s', $media->getId(), $extension);
 
             $destination = $this->getParameter('upload_directory');
             $targetPath  = $destination . '/' . $filename;
 
-            // 3️⃣ Compression & déplacement
-            $this->compressImage(
-                $uploadedFile->getPathname(),
-                $targetPath,
-                85
-            );
+            try {
+                // Compression & déplacement
+                $this->compressImage(
+                    $uploadedFile->getPathname(),
+                    $targetPath,
+                    85
+                );
 
-            // 4️⃣ Mise à jour du path
-            $media->setPath('uploads/' . $filename);
+                // Mise à jour du path
+                $media->setPath('uploads/' . $filename);
+                $em->flush();
 
-            $em->flush();
-
-            $this->addFlash('success', 'Image ajoutée avec succès');
+                $this->addFlash('success', 'Image ajoutée avec succès.');
+            } catch (\Throwable $e) {
+                $this->addFlash(
+                    'danger',
+                    'Erreur lors du traitement de l’image : ' . $e->getMessage()
+                );
+            }
 
             return $this->redirectToRoute('admin_media_index');
         }
@@ -99,11 +112,29 @@ class MediaController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/media/delete/{id}', name: 'admin_media_delete')]
+    #[Route('/admin/media/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
     public function delete(
         Media $media,
+        Request $request,
         EntityManagerInterface $em
     ): Response {
+        if (!$this->isCsrfTokenValid(
+            'delete_media_' . $media->getId(),
+            $request->request->get('_token')
+        )) {
+            $this->addFlash('danger', 'Jeton CSRF invalide.');
+            return $this->redirectToRoute('admin_media_index');
+        }
+
+        // Sécurité : un utilisateur ne supprime que ses médias
+        if (
+            !$this->isGranted('ROLE_ADMIN')
+            && $media->getUser() !== $this->getUser()
+        ) {
+            $this->addFlash('danger', 'Vous n’êtes pas autorisé à supprimer ce média.');
+            return $this->redirectToRoute('admin_media_index');
+        }
+
         $absolutePath = $this->getParameter('kernel.project_dir')
             . '/public/' . $media->getPath();
 
@@ -113,6 +144,8 @@ class MediaController extends AbstractController
 
         $em->remove($media);
         $em->flush();
+
+        $this->addFlash('success', 'Image supprimée avec succès.');
 
         return $this->redirectToRoute('admin_media_index');
     }

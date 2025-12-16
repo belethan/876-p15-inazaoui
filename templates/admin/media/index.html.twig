@@ -33,12 +33,13 @@
                             class="btn btn-danger"
                             data-bs-toggle="modal"
                             data-bs-target="#confirmDeleteModal"
-                            data-action="{{ path('admin_media_delete', {id: media.id}) }}"
-                            data-token="{{ csrf_token('delete_media_' ~ media.id) }}"
-                            data-message="Voulez-vous vraiment supprimer cette photo ?"
+                            data-delete-url="{{ path('admin_media_delete', { id: media.id }) }}"
+                            data-delete-token="{{ csrf_token('delete_media_' ~ media.id) }}"
+                            data-delete-message="Voulez-vous vraiment supprimer cette photo ?"
                     >
                         Supprimer
                     </button>
+
                 </td>
 
             </tr>
