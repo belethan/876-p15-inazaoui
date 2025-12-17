@@ -33,7 +33,7 @@ class UserRepository extends ServiceEntityRepository
     /**
      * Retourne l’administratrice (Ina).
      */
-    public function findAdmin(): ?User
+    public function findAdmin(): User|null
     {
         foreach ($this->findAll() as $user) {
             if (in_array('ROLE_ADMIN', $user->getRoles(), true)) {

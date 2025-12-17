@@ -17,15 +17,15 @@ class Album
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int|null $id = null;
 
 
     #[ORM\Column(length: 255)]
     private string $name;
 
     #[ORM\OneToMany(
-        mappedBy: 'album',
         targetEntity: Media::class,
+        mappedBy: 'album',
         cascade: ['persist', 'remove']
     )]
     private Collection $media;
@@ -35,7 +35,7 @@ class Album
         $this->media = new ArrayCollection();
     }
 
-    public function getId(): ?int
+    public function getId(): int|null
     {
         return $this->id;
     }
@@ -70,10 +70,8 @@ class Album
 
     public function removeMedia(Media $media): self
     {
-        if ($this->media->removeElement($media)) {
-            if ($media->getAlbum() === $this) {
-                $media->setAlbum(null);
-            }
+        if ($this->media->removeElement($media) && $media->getAlbum() === $this) {
+            $media->setAlbum(null);
         }
 
         return $this;

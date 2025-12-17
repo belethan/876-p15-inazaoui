@@ -12,6 +12,7 @@ class AlbumTypeTest extends TypeTestCase
 {
     protected function getExtensions(): array
     {
+        parent::getExtensions();
         $validator = Validation::createValidatorBuilder()
             ->enableAttributeMapping()
             ->getValidator();

@@ -7,43 +7,39 @@ use App\Entity\Media;
 use App\Entity\User;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 
 class HomeController extends AbstractController
 {
     #[Route("/", name: "home")]
-    public function home()
+    public function home(): Response
     {
         return $this->render('front/home.html.twig');
     }
 
     #[Route("/guests", name: "guests")]
-    public function guests(ManagerRegistry $doctrine)
+    public function guests(ManagerRegistry $doctrine): Response
     {
         $userRepo = $doctrine->getRepository(User::class);
 
         // Utilise la méthode optimisée du repository
         $guests = $userRepo->findAllGuests();
         //dd($guests);
-        return $this->render('front/guests.html.twig', [
-            'guests' => $guests,
-        ]);
+        return $this->render('front/guests.html.twig', compact('guests'));
     }
 
     #[Route("/guest/{id}", name: "guest")]
-    public function guest(int $id, ManagerRegistry $doctrine)
+    public function guest(int $id, ManagerRegistry $doctrine): Response
     {
         $em = $doctrine->getManager();
         $guest = $em->getRepository(User::class)->find($id);
-        $guest = $doctrine->getRepository(User::class)->find($id);
-        return $this->render('front/guest.html.twig', [
-            'guest' => $guest,
-        ]);
+        return $this->render('front/guest.html.twig', compact('guest'));
     }
 
     #[Route("/portfolio/{id?}", name: "portfolio")]
-    public function portfolio(ManagerRegistry $doctrine, ?int $id = null)
+    public function portfolio(ManagerRegistry $doctrine, int|null $id = null): Response
     {
         $albumRepo = $doctrine->getRepository(Album::class);
         $mediaRepo = $doctrine->getRepository(Media::class);
@@ -60,20 +56,16 @@ class HomeController extends AbstractController
 
         // Sélection des médias en fonction du contexte
         if ($album) {
-            $medias = $mediaRepo->findBy(['album' => $album]);
+            $medias = $mediaRepo->findBy(compact('album'));
         } else {
             $medias = $mediaRepo->findBy(['user' => $admin]);
         }
 
-        return $this->render('front/portfolio.html.twig', [
-            'albums' => $albums,
-            'album'  => $album,
-            'medias' => $medias,
-        ]);
+        return $this->render('front/portfolio.html.twig', compact('albums', 'album', 'medias'));
     }
 
     #[Route("/about", name: "about")]
-    public function about()
+    public function about(): Response
     {
         return $this->render('front/about.html.twig');
     }
