@@ -1,38 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- https://phpunit.readthedocs.io/en/latest/configuration.html -->
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         backupGlobals="false"
-         colors="true"
-         bootstrap="tests/bootstrap.php"
-         convertDeprecationsToExceptions="false"
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+        bootstrap="vendor/autoload.php"
+        colors="true"
+        cacheDirectory=".phpunit.cache"
+        executionOrder="depends,defects"
+        failOnRisky="true"
+        failOnWarning="true"
 >
-    <php>
-        <ini name="display_errors" value="1" />
-        <ini name="error_reporting" value="-1" />
-        <server name="APP_ENV" value="test" force="true" />
-        <server name="SHELL_VERBOSITY" value="-1" />
-        <server name="SYMFONY_PHPUNIT_REMOVE" value="" />
-        <server name="SYMFONY_PHPUNIT_VERSION" value="9.5" />
-    </php>
-
+    <!-- ===================== -->
+    <!-- Test suites           -->
+    <!-- ===================== -->
     <testsuites>
-        <testsuite name="Project Test Suite">
+        <testsuite name="Application">
             <directory>tests</directory>
         </testsuite>
     </testsuites>
 
-    <coverage processUncoveredFiles="true">
+    <!-- ===================== -->
+    <!-- Code source analysé   -->
+    <!-- (Coverage ciblé)      -->
+    <!-- ===================== -->
+    <source>
+        <!-- Code métier uniquement -->
         <include>
-            <directory suffix=".php">src</directory>
+            <directory suffix=".php">src/Entity</directory>
+            <directory suffix=".php">src/Repository</directory>
         </include>
-    </coverage>
 
-    <listeners>
-        <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener" />
-    </listeners>
+        <!-- Exclusions explicites -->
+        <exclude>
+            <directory>src/Command</directory>
+            <directory>src/Controller</directory>
+            <directory>src/DataFixtures</directory>
+            <directory>src/Form</directory>
+            <directory>src/Security</directory>
+            <file>src/Kernel.php</file>
+        </exclude>
+    </source>
 
-    <extensions>
-    </extensions>
+    <!-- ===================== -->
+    <!-- Environnement PHP     -->
+    <!-- ===================== -->
+    <php>
+        <!-- Symfony -->
+        <env name="APP_ENV" value="test"/>
+        <env name="APP_DEBUG" value="1"/>
+        <env name="KERNEL_CLASS" value="App\Kernel"/>
+        <env name="SHELL_VERBOSITY" value="-1"/>
+
+        <!-- Doctrine : base de TEST -->
+        <env name="DATABASE_URL"
+             value="mysql://admludo:Coqwheel!9729@127.0.0.1:3306/inazaoui?serverVersion=8.0&amp;charset=utf8mb4"/>
+    </php>
 </phpunit>

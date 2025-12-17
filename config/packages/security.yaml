@@ -11,32 +11,40 @@ security:
 
   firewalls:
 
+    # FIREWALL DEV — DOIT AVOIR UN PATTERN
     dev:
+      pattern: ^/(_(profiler|wdt)|css|images|js)/
       security: false
 
-    admin:
-      pattern: ^/admin
+    # FIREWALL PRINCIPAL
+    main:
       provider: app_user_provider
       lazy: true
       stateless: false
+      # user_checker: App\Security\UserChecker  # à réactiver plus tard
 
       form_login:
-        login_path: admin_login
-        check_path: admin_login
+        login_path: login        # nom de route (GET)
+        check_path: /login       # chemin HTTP (POST)
         username_parameter: email
         password_parameter: password
         enable_csrf: true
-        default_target_path: admin_dashboard
-        remember_me: false
-        post_only: true
+        success_handler: App\Security\LoginSuccessHandler
 
       logout:
-        path: admin_logout
-        target: admin_login
+        path: logout
+        target: login
 
   role_hierarchy:
     ROLE_ADMIN: ROLE_USER
 
   access_control:
-    - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+    # Pages publiques
+    - { path: ^/login$, roles: PUBLIC_ACCESS }
+    - { path: ^/register, roles: PUBLIC_ACCESS }
+
+    # Administration
     - { path: ^/admin, roles: ROLE_ADMIN }
+
+    # Tout le reste nécessite une authentification
+    - { path: ^/, roles: ROLE_USER }

@@ -4,16 +4,27 @@ namespace App\Controller\Admin;
 
 use App\Entity\Media;
 use App\Form\MediaType;
+use App\Repository\MediaRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Throwable;
 
+#[IsGranted('ROLE_USER')]
 class MediaController extends AbstractController
 {
-    #[Route("/admin/media", name: "admin_media_index")]
-    public function index(Request $request)
-    {
-        $page = $request->query->getInt('page', 1);
+    #[Route('/admin/media', name: 'admin_media_index', methods: ['GET'])]
+    public function index(
+        Request $request,
+        MediaRepository $mediaRepository
+    ): Response {
+        $page  = max(1, $request->query->getInt('page', 1));
+        $limit = 25;
 
         $criteria = [];
 
@@ -21,53 +32,154 @@ class MediaController extends AbstractController
             $criteria['user'] = $this->getUser();
         }
 
-        $medias = $this->getDoctrine()->getRepository(Media::class)->findBy(
+        $medias = $mediaRepository->findBy(
             $criteria,
             ['id' => 'ASC'],
-            25,
-            25 * ($page - 1)
+            $limit,
+            ($page - 1) * $limit
         );
-        $total = $this->getDoctrine()->getRepository(Media::class)->count([]);
 
-        return $this->render('admin/media/index.html.twig', [
-            'medias' => $medias,
-            'total' => $total,
-            'page' => $page
-        ]);
+        $total      = $mediaRepository->count($criteria);
+        $totalPages = (int) ceil($total / $limit);
+
+        return $this->render('admin/media/index.html.twig', compact('medias', 'page', 'totalPages'));
     }
 
-    #[Route("/admin/media/add", name: "admin_media_add")]
-    public function add(Request $request)
-    {
+    #[Route('/admin/media/add', name: 'admin_media_add', methods: ['GET', 'POST'])]
+    public function add(
+        Request $request,
+        EntityManagerInterface $em
+    ): Response {
         $media = new Media();
-        $form = $this->createForm(MediaType::class, $media, ['is_admin' => $this->isGranted('ROLE_ADMIN')]);
+
+        $form = $this->createForm(MediaType::class, $media, [
+            'is_admin' => $this->isGranted('ROLE_ADMIN'),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+
+            /** @var UploadedFile|null $uploadedFile */
+            $uploadedFile = $form->get('file')->getData();
+
+            if (!$uploadedFile) {
+                $this->addFlash('danger', 'Aucun fichier envoyé.');
+                return $this->redirectToRoute('admin_media_index');
+            }
+
+            // Attribution utilisateur
             if (!$this->isGranted('ROLE_ADMIN')) {
                 $media->setUser($this->getUser());
             }
-            $media->setPath('uploads/' . md5(uniqid()) . '.' . $media->getFile()->guessExtension());
-            $media->getFile()->move('uploads/', $media->getPath());
-            $this->getDoctrine()->getManager()->persist($media);
-            $this->getDoctrine()->getManager()->flush();
+
+            $em->persist($media);
+            $em->flush(); // nécessaire pour obtenir l’ID
+
+            $extension = $uploadedFile->guessExtension() ?? 'jpg';
+            $filename  = sprintf('%04d.%s', $media->getId(), $extension);
+
+            $destination = $this->getParameter('upload_directory');
+            $targetPath  = $destination . '/' . $filename;
+
+            try {
+                $this->compressImage(
+                    $uploadedFile->getPathname(),
+                    $targetPath
+                );
+
+                $media->setPath('uploads/' . $filename);
+                $em->flush();
+
+                $this->addFlash('success', 'Image ajoutée avec succès.');
+            } catch (Throwable $e) {
+                $this->addFlash(
+                    'danger',
+                    'Erreur image : ' . $e->getMessage()
+                );
+            }
 
             return $this->redirectToRoute('admin_media_index');
         }
 
-        return $this->render('admin/media/add.html.twig', ['form' => $form->createView()]);
+        return $this->render('admin/media/add.html.twig', [
+            'form' => $form->createView(),
+        ]);
     }
 
-    #[Route("/admin/media/delete/{id}", name: "admin_media_delete")]
-    public function delete(int $id)
-    {
-        $media = $this->getDoctrine()->getRepository(Media::class)->find($id);
-        $this->getDoctrine()->getManager()->remove($media);
-        $this->getDoctrine()->getManager()->flush();
-        unlink($media->getPath());
+    #[Route(
+        '/admin/media/delete/{id}',
+        name: 'admin_media_delete',
+        methods: ['POST']
+    )]
+    public function delete(
+        Media $media,
+        Request $request,
+        EntityManagerInterface $em
+    ): Response {
+        // 🔐 CSRF UNIQUEMENT hors environnement test
+        if (($this->getParameter('kernel.environment') !== 'test') && !$this->isCsrfTokenValid(
+                'delete_media_' . $media->getId(),
+                $request->request->get('_token')
+            )) {
+                $this->addFlash('danger', 'Jeton CSRF invalide.');
+                return $this->redirectToRoute('admin_media_index');
+            }
+
+        // 🔐 Sécurité utilisateur
+        if (
+            !$this->isGranted('ROLE_ADMIN')
+            && $media->getUser() !== $this->getUser()
+        ) {
+            $this->addFlash(
+                'danger',
+                'Vous n’êtes pas autorisé à supprimer ce média.'
+            );
+            return $this->redirectToRoute('admin_media_index');
+        }
+
+        // 🗑️ Suppression fichier physique
+        if ($media->getPath()) {
+            $absolutePath = $this->getParameter('kernel.project_dir')
+                . '/public/' . $media->getPath();
+
+            if (file_exists($absolutePath)) {
+                unlink($absolutePath);
+            }
+        }
+
+        // 🗑️ Suppression base
+        $em->remove($media);
+        $em->flush();
+
+        $this->addFlash('success', 'Image supprimée.');
 
         return $this->redirectToRoute('admin_media_index');
     }
 
+    /**
+     * Compression image JPG / PNG
+     */
+    private function compressImage(
+        string $source,
+        string $destination,
+        int $quality = 85
+    ): void {
+        $info = getimagesize($source);
 
+        match ($info['mime']) {
+            'image/jpeg' => imagejpeg(
+                imagecreatefromjpeg($source),
+                $destination,
+                $quality
+            ),
+            'image/png' => imagepng(
+                imagecreatefrompng($source),
+                $destination,
+                6
+            ),
+            default => throw new RuntimeException(
+                'Format image non supporté'
+            ),
+        };
+    }
 }

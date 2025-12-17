@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SensitiveParameter;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
@@ -18,7 +21,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int|null $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
     private string $email;
@@ -30,30 +33,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private string $password;
 
     #[ORM\Column(length: 100, nullable: true)]
-    private ?string $nom = null;
+    private string|null $nom = null;
 
     #[ORM\Column(length: 100, nullable: true)]
-    private ?string $prenom = null;
+    private string|null $prenom = null;
 
     #[ORM\Column(name: 'user_actif', type: 'boolean', options: ['default' => true])]
     private bool $userActif = true;
 
     #[ORM\Column(type: 'datetime')]
-    private \DateTimeInterface $createdAt;
+    private DateTimeInterface $createdAt;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $updatedAt = null;
+    private DateTimeInterface|null $updatedAt = null;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Media::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $medias;
 
     public function __construct()
     {
         $this->medias = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = new DateTimeImmutable();
     }
 
-    public function getId(): ?int
+    public function getId(): int|null
     {
         return $this->id;
     }
@@ -63,7 +66,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
-    public function setEmail(string $email): self
+    public function setEmail(#[SensitiveParameter] string $email): self
     {
         $this->email = $email;
         return $this;
@@ -98,7 +101,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->password;
     }
 
-    public function setPassword(string $password): self
+    public function setPassword(#[SensitiveParameter] string $password): self
     {
         $this->password = $password;
         return $this;
@@ -109,23 +112,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function eraseCredentials(): void {}
 
-    public function getNom(): ?string
+    public function getNom(): string|null
     {
         return $this->nom;
     }
 
-    public function setNom(?string $nom): self
+    public function setNom(string|null $nom): self
     {
         $this->nom = $nom;
         return $this;
     }
 
-    public function getPrenom(): ?string
+    public function getPrenom(): string|null
     {
         return $this->prenom;
     }
 
-    public function setPrenom(?string $prenom): self
+    public function setPrenom(string|null $prenom): self
     {
         $this->prenom = $prenom;
         return $this;
@@ -143,23 +146,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getCreatedAt(): \DateTimeInterface
+    public function getCreatedAt(): DateTimeInterface
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeInterface $createdAt): self
+    public function setCreatedAt(DateTimeInterface $createdAt): self
     {
         $this->createdAt = $createdAt;
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTimeInterface
+    public function getUpdatedAt(): DateTimeInterface|null
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(?\DateTimeInterface $updatedAt): self
+    public function setUpdatedAt(DateTimeInterface|null $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
         return $this;
@@ -182,11 +185,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeMedia(Media $media): self
     {
-        if ($this->medias->removeElement($media)) {
-            if ($media->getUser() === $this) {
-                $media->setUser(null);
-            }
+        if ($this->medias->removeElement($media) && $media->getUser() === $this) {
+            $media->setUser(null);
         }
         return $this;
     }
+
+    public function getFullName(): string
+    {
+        return trim($this->prenom . ' ' . $this->nom);
+    }
+
 }
