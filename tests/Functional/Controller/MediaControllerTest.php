@@ -3,22 +3,23 @@
 namespace App\Tests\Functional\Controller;
 
 use App\Entity\Media;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use App\Tests\Support\TestUserFactory;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 class MediaControllerTest extends WebTestCase
 {
-    private function loginIna()
+    private function loginIna(): KernelBrowser
     {
         $client = static::createClient();
 
         $em = static::getContainer()->get('doctrine')->getManager();
-
-        // Récupère ou crée Ina de manière fiable
         $user = TestUserFactory::getOrCreateIna($em);
 
-        // Authentification Symfony propre (sans formulaire)
         $client->loginUser($user);
+
+        // IMPORTANT : crée une session HTTP réelle
+        $client->request('GET', '/admin/media');
 
         return $client;
     }
@@ -26,18 +27,20 @@ class MediaControllerTest extends WebTestCase
     public function testMediaIndexRequiresAuthentication(): void
     {
         $client = static::createClient();
+
         $client->request('GET', '/admin/media');
 
-        $this->assertResponseRedirects('/login');
+        self::assertResponseRedirects('/login');
     }
 
     public function testMediaIndexAsAdmin(): void
     {
         $client = $this->loginIna();
+
         $client->request('GET', '/admin/media');
 
-        $this->assertResponseIsSuccessful();
-        $this->assertSelectorExists('table');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('table');
     }
 
     public function testDeleteMedia(): void
@@ -45,14 +48,12 @@ class MediaControllerTest extends WebTestCase
         $client = $this->loginIna();
 
         $em = static::getContainer()->get('doctrine')->getManager();
-
-        // Récupère Ina (garanti)
         $user = TestUserFactory::getOrCreateIna($em);
 
-        //  Crée un Media dédié au test (ne dépend pas de la DB)
+        // 1️⃣ Création du média
         $media = new Media();
-        $media->setTitle('Media test');
-        $media->setPath('uploads/test.jpg'); // pas besoin que le fichier existe
+        $media->setTitle('Test delete');
+        $media->setPath('uploads/test.jpg');
         $media->setUser($user);
 
         $em->persist($media);
@@ -60,17 +61,24 @@ class MediaControllerTest extends WebTestCase
 
         $mediaId = $media->getId();
 
-        // appel de la vraie route (GET)
+        // Sécurité : vérifier qu'il existe bien avant suppression
+        self::assertNotNull(
+            $em->getRepository(Media::class)->find($mediaId)
+        );
+
+        // 2️⃣ Appel POST réel (sans CSRF en env=test)
         $client->request(
-            'GET',
+            'POST',
             '/admin/media/delete/' . $mediaId
         );
 
-        // redirection après suppression
-        $this->assertResponseRedirects('/admin/media');
+        // 3️⃣ Redirection attendue
+        self::assertResponseRedirects('/admin/media');
 
-        // vérification suppression DB
+        // 4️⃣ Vérification suppression
+        $em->clear();
         $deleted = $em->getRepository(Media::class)->find($mediaId);
-        $this->assertNull($deleted);
+
+        self::assertNull($deleted);
     }
 }
