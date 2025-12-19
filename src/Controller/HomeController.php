@@ -5,11 +5,12 @@ namespace App\Controller;
 use App\Entity\Album;
 use App\Entity\Media;
 use App\Entity\User;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Repository\AlbumRepository;
+use App\Repository\MediaRepository;
+use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-
 
 class HomeController extends AbstractController
 {
@@ -19,46 +20,67 @@ class HomeController extends AbstractController
         return $this->render('front/home.html.twig');
     }
 
+    /**
+     * Liste des invités (utilisateurs actifs uniquement)
+     */
     #[Route("/guests", name: "guests")]
-    public function guests(ManagerRegistry $doctrine): Response
+    public function guests(UserRepository $userRepository): Response
     {
-        $userRepo = $doctrine->getRepository(User::class);
+        $guests = $userRepository->findAllGuests(); // déjà filtré userActif = true
 
-        // Utilise la méthode optimisée du repository
-        $guests = $userRepo->findAllGuests();
-        //dd($guests);
         return $this->render('front/guests.html.twig', compact('guests'));
     }
 
+    /**
+     * Détail d’un invité actif
+     */
     #[Route("/guest/{id}", name: "guest")]
-    public function guest(int $id, ManagerRegistry $doctrine): Response
-    {
-        $em = $doctrine->getManager();
-        $guest = $em->getRepository(User::class)->find($id);
+    public function guest(
+        int $id,
+        UserRepository $userRepository
+    ): Response {
+        $guest = $userRepository->find($id);
+
+        // Sécurité : invité inexistant ou inactif
+        if (!$guest || !$guest->isUserActif()) {
+            throw $this->createNotFoundException();
+        }
+
         return $this->render('front/guest.html.twig', compact('guest'));
     }
 
+    /**
+     * Portfolio / Albums
+     * - médias d’utilisateurs actifs uniquement
+     */
     #[Route("/portfolio/{id?}", name: "portfolio")]
-    public function portfolio(ManagerRegistry $doctrine, int|null $id = null): Response
-    {
-        $albumRepo = $doctrine->getRepository(Album::class);
-        $mediaRepo = $doctrine->getRepository(Media::class);
-        $userRepo = $doctrine->getRepository(User::class);
+    public function portfolio(
+        AlbumRepository $albumRepository,
+        MediaRepository $mediaRepository,
+        UserRepository $userRepository,
+        int|null $id = null
+    ): Response {
+        // Albums avec médias visibles uniquement
+        $albums = $albumRepository->findAlbumsWithVisibleMedias();
 
-        // Tous les albums
-        $albums = $albumRepo->findAll();
+        // Album sélectionné
+        $album = $id ? $albumRepository->find($id) : null;
 
-        // Album sélectionné (ou null pour la page générale)
-        $album = $id ? $albumRepo->find($id) : null;
+        // Si l’album n’existe pas
+        if ($id && !$album) {
+            throw $this->createNotFoundException();
+        }
 
-        // Administratrice (Ina)
-        $admin = $userRepo->findAdmin();
+        // Administratrice (Ina, active)
+        $admin = $userRepository->findAdmin();
 
-        // Sélection des médias en fonction du contexte
+        // Médias visibles selon le contexte
         if ($album) {
-            $medias = $mediaRepo->findBy(compact('album'));
+            $medias = $mediaRepository->findVisibleMedias(compact('album'));
         } else {
-            $medias = $mediaRepo->findBy(['user' => $admin]);
+            $medias = $mediaRepository->findVisibleMedias([
+                'user' => $admin,
+            ]);
         }
 
         return $this->render('front/portfolio.html.twig', compact('albums', 'album', 'medias'));

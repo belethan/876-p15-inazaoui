@@ -22,6 +22,9 @@ class Media
     #[ORM\Column(length: 255)]
     private string $title;
 
+    #[ORM\Column(type: 'string', length: 255)]
+    private ?string $description = null;
+
     #[ORM\ManyToOne(inversedBy: 'medias')]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private User|null $user = null;
@@ -78,4 +81,16 @@ class Media
         $this->album = $album;
         return $this;
     }
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
 }

@@ -48,5 +48,3 @@ security:
     # Administration
     - { path: ^/admin, roles: ROLE_ADMIN }
 
-    # Tout le reste nécessite une authentification
-    - { path: ^/, roles: ROLE_USER }

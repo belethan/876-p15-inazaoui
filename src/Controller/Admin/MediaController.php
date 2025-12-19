@@ -54,6 +54,7 @@ class MediaController extends AbstractController
 
         $form = $this->createForm(MediaType::class, $media, [
             'is_admin' => $this->isGranted('ROLE_ADMIN'),
+            'is_edit' => false,
         ]);
         $form->handleRequest($request);
 
@@ -111,12 +112,76 @@ class MediaController extends AbstractController
         name: 'admin_media_delete',
         methods: ['POST']
     )]
+
+    #[Route('/admin/media/edit/{id}', name: 'admin_media_edit', methods: ['GET', 'POST'])]
+    public function edit(
+        Media $media,
+        Request $request,
+        EntityManagerInterface $em
+    ): Response {
+        // Sécurité utilisateur
+        if (
+            !$this->isGranted('ROLE_ADMIN')
+            && $media->getUser() !== $this->getUser()
+        ) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $form = $this->createForm(MediaType::class, $media, [
+            'is_admin' => $this->isGranted('ROLE_ADMIN'),
+            'is_edit' => true,
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            /** @var UploadedFile|null $uploadedFile */
+            $uploadedFile = $form->get('file')->getData();
+
+            if ($uploadedFile) {
+
+                // Suppression ancienne image
+                if ($media->getPath()) {
+                    $oldPath = $this->getParameter('kernel.project_dir')
+                        . '/public/' . $media->getPath();
+
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                }
+
+                $extension = $uploadedFile->guessExtension() ?? 'jpg';
+                $filename  = sprintf('%04d.%s', $media->getId(), $extension);
+                $target    = $this->getParameter('upload_directory') . '/' . $filename;
+
+                $this->compressImage(
+                    $uploadedFile->getPathname(),
+                    $target
+                );
+
+                $media->setPath('uploads/' . $filename);
+            }
+
+            $em->flush();
+
+            $this->addFlash('success', 'Média modifié avec succès.');
+
+            return $this->redirectToRoute('admin_media_index');
+        }
+
+        return $this->render('admin/media/edit.html.twig', [
+            'form' => $form->createView(),
+            'media' => $media,
+        ]);
+    }
+
+
     public function delete(
         Media $media,
         Request $request,
         EntityManagerInterface $em
     ): Response {
-        // 🔐 CSRF UNIQUEMENT hors environnement test
+        // CSRF UNIQUEMENT hors environnement test
         if (($this->getParameter('kernel.environment') !== 'test') && !$this->isCsrfTokenValid(
                 'delete_media_' . $media->getId(),
                 $request->request->get('_token')

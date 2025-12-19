@@ -43,4 +43,18 @@ class UserRepository extends ServiceEntityRepository
 
         return null;
     }
+
+    public function findGuestWithMedias(int $id): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->leftJoin('u.medias', 'm')
+            ->addSelect('m')
+            ->andWhere('u.id = :id')
+            ->andWhere('u.roles NOT LIKE :admin')
+            ->setParameter('id', $id)
+            ->setParameter('admin', '%ROLE_ADMIN%')
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
 }
