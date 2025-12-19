@@ -4,7 +4,9 @@ namespace App\Controller\Admin;
 
 use App\Entity\User;
 use App\Form\UserType;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use SensitiveParameter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,7 +37,7 @@ class UserController extends AbstractController
     public function data(
         Request $request,
         EntityManagerInterface $em,
-        CsrfTokenManagerInterface $csrfTokenManager
+        #[SensitiveParameter] CsrfTokenManagerInterface $csrfTokenManager
     ): JsonResponse {
         $draw   = (int) $request->request->get('draw', 1);
         $start  = (int) $request->request->get('start', 0);
@@ -128,12 +130,7 @@ class UserController extends AbstractController
             ];
         }
 
-        return $this->json([
-            'draw'            => $draw,
-            'recordsTotal'    => $recordsTotal,
-            'recordsFiltered' => $recordsFiltered,
-            'data'            => $data,
-        ]);
+        return $this->json(compact('draw', 'recordsTotal', 'recordsFiltered', 'data'));
     }
 
     /* ============================================================
@@ -201,7 +198,7 @@ class UserController extends AbstractController
                 $user->setPassword($hashedPassword);
             }
 
-            $user->setUpdatedAt(new \DateTimeImmutable());
+            $user->setUpdatedAt(new DateTimeImmutable());
 
             $em->flush();
 

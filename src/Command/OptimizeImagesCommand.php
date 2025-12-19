@@ -72,17 +72,23 @@ class OptimizeImagesCommand extends Command
         switch ($info['mime']) {
             case 'image/jpeg':
                 $img = @imagecreatefromjpeg($file);
-                if ($img) imagejpeg($img, $file, 75);
+                if ($img) {
+                    imagejpeg($img, $file, 75);
+                }
                 break;
 
             case 'image/png':
                 $img = @imagecreatefrompng($file);
-                if ($img) imagepng($img, $file, 7);
+                if ($img) {
+                    imagepng($img, $file, 7);
+                }
                 break;
 
             case 'image/webp':
                 $img = @imagecreatefromwebp($file);
-                if ($img) imagewebp($img, $file, 75);
+                if ($img) {
+                    imagewebp($img, $file, 75);
+                }
                 break;
         }
     }

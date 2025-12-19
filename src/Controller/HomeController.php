@@ -2,9 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Album;
-use App\Entity\Media;
-use App\Entity\User;
 use App\Repository\AlbumRepository;
 use App\Repository\MediaRepository;
 use App\Repository\UserRepository;
@@ -51,7 +48,7 @@ class HomeController extends AbstractController
 
     /**
      * Portfolio / Albums
-     * - médias d’utilisateurs actifs uniquement
+     * médias d’utilisateurs actifs uniquement
      */
     #[Route("/portfolio/{id?}", name: "portfolio")]
     public function portfolio(
