@@ -21,7 +21,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private int|null $id = null;
+    private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
     private string $email;
@@ -33,10 +33,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private string $password;
 
     #[ORM\Column(length: 100, nullable: true)]
-    private string|null $nom = null;
+    private ?string $nom = null;
 
     #[ORM\Column(length: 100, nullable: true)]
-    private string|null $prenom = null;
+    private ?string $prenom = null;
 
     #[ORM\Column(name: 'user_actif', type: 'boolean', options: ['default' => true])]
     private bool $userActif = true;
@@ -45,18 +45,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private DateTimeInterface $createdAt;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    private DateTimeInterface|null $updatedAt = null;
+    private ?DateTimeInterface $updatedAt = null;
 
-    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'user', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    /**
+     * Médias appartenant à l’utilisateur
+     */
+    #[ORM\OneToMany(
+        targetEntity: Media::class,
+        mappedBy: 'user',
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
     private Collection $medias;
+
+    /**
+     * Albums appartenant à l’utilisateur
+     */
+    #[ORM\OneToMany(
+        targetEntity: Album::class,
+        mappedBy: 'user',
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
+    private Collection $albums;
 
     public function __construct()
     {
         $this->medias = new ArrayCollection();
+        $this->albums = new ArrayCollection();
         $this->createdAt = new DateTimeImmutable();
     }
 
-    public function getId(): int|null
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -83,8 +103,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
-
-        // garantit qu'un utilisateur possède toujours au moins ROLE_USER
         $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
@@ -107,28 +125,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * Appelée après l’authentification pour effacer d'éventuelles données sensibles
-     */
-    public function eraseCredentials(): void {}
+    public function eraseCredentials(): void
+    {
+    }
 
-    public function getNom(): string|null
+    public function getNom(): ?string
     {
         return $this->nom;
     }
 
-    public function setNom(string|null $nom): self
+    public function setNom(?string $nom): self
     {
         $this->nom = $nom;
         return $this;
     }
 
-    public function getPrenom(): string|null
+    public function getPrenom(): ?string
     {
         return $this->prenom;
     }
 
-    public function setPrenom(string|null $prenom): self
+    public function setPrenom(?string $prenom): self
     {
         $this->prenom = $prenom;
         return $this;
@@ -142,7 +159,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUserActif(bool $userActif): self
     {
         $this->userActif = $userActif;
-
         return $this;
     }
 
@@ -157,12 +173,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getUpdatedAt(): DateTimeInterface|null
+    public function getUpdatedAt(): ?DateTimeInterface
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(DateTimeInterface|null $updatedAt): self
+    public function setUpdatedAt(?DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
         return $this;
@@ -191,9 +207,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getFullName(): string
+    /** @return Collection<int, Album> */
+    public function getAlbums(): Collection
     {
-        return trim($this->prenom . ' ' . $this->nom);
+        return $this->albums;
     }
 
+    public function addAlbum(Album $album): self
+    {
+        if (!$this->albums->contains($album)) {
+            $this->albums->add($album);
+            $album->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeAlbum(Album $album): self
+    {
+        if ($this->albums->removeElement($album) && $album->getUser() === $this) {
+            $album->setUser(null);
+        }
+        return $this;
+    }
+
+    public function getFullName(): string
+    {
+        return trim(($this->prenom ?? '') . ' ' . ($this->nom ?? ''));
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Media;
+use App\Entity\User;
 use App\Form\MediaType;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,10 +20,8 @@ use Throwable;
 class MediaController extends AbstractController
 {
     #[Route('/admin/media', name: 'admin_media_index', methods: ['GET'])]
-    public function index(
-        Request $request,
-        MediaRepository $mediaRepository
-    ): Response {
+    public function index(Request $request, MediaRepository $mediaRepository): Response
+    {
         $page   = max(1, $request->query->getInt('page', 1));
         $limit  = 25;
         $offset = ($page - 1) * $limit;
@@ -30,17 +29,14 @@ class MediaController extends AbstractController
         $criteria = [];
 
         if (!$this->isGranted('ROLE_ADMIN')) {
-            $criteria['user'] = $this->getUser();
+            /** @var User $user */
+            $user = $this->getUser();
+            $criteria['user'] = $user;
         }
 
-        $medias = $mediaRepository->findVisibleMedias(
-            $criteria,
-            $limit,
-            $offset
-        );
-
-        $total       = $mediaRepository->countVisibleMedias($criteria);
-        $totalPages  = (int) ceil($total / $limit);
+        $medias = $mediaRepository->findVisibleMedias($criteria, $limit, $offset);
+        $total = $mediaRepository->countVisibleMedias($criteria);
+        $totalPages = (int) ceil($total / $limit);
 
         return $this->render('admin/media/index.html.twig', compact(
             'medias',
@@ -50,10 +46,8 @@ class MediaController extends AbstractController
     }
 
     #[Route('/admin/media/add', name: 'admin_media_add', methods: ['GET', 'POST'])]
-    public function add(
-        Request $request,
-        EntityManagerInterface $em
-    ): Response {
+    public function add(Request $request, EntityManagerInterface $em): Response
+    {
         $media = new Media();
 
         $form = $this->createForm(MediaType::class, $media, [
@@ -74,7 +68,9 @@ class MediaController extends AbstractController
             }
 
             if (!$this->isGranted('ROLE_ADMIN')) {
-                $media->setUser($this->getUser());
+                /** @var User $user */
+                $user = $this->getUser();
+                $media->setUser($user);
             }
 
             $em->persist($media);
@@ -82,25 +78,16 @@ class MediaController extends AbstractController
 
             $extension = $uploadedFile->guessExtension() ?? 'jpg';
             $filename  = sprintf('%04d.%s', $media->getId(), $extension);
-
-            $destination = $this->getParameter('upload_directory');
-            $targetPath  = $destination . '/' . $filename;
+            $targetPath = $this->getParameter('upload_directory') . '/' . $filename;
 
             try {
-                $this->compressImage(
-                    $uploadedFile->getPathname(),
-                    $targetPath
-                );
-
+                $this->compressImage($uploadedFile->getPathname(), $targetPath);
                 $media->setPath('uploads/' . $filename);
                 $em->flush();
 
                 $this->addFlash('success', 'Image ajoutée avec succès.');
             } catch (Throwable $e) {
-                $this->addFlash(
-                    'danger',
-                    'Erreur lors du traitement de l’image : ' . $e->getMessage()
-                );
+                $this->addFlash('danger', 'Erreur image : ' . $e->getMessage());
             }
 
             return $this->redirectToRoute('admin_media_index');
@@ -114,11 +101,8 @@ class MediaController extends AbstractController
     }
 
     #[Route('/admin/media/edit/{id}', name: 'admin_media_edit', methods: ['GET', 'POST'])]
-    public function edit(
-        Media $media,
-        Request $request,
-        EntityManagerInterface $em
-    ): Response {
+    public function edit(Media $media, Request $request, EntityManagerInterface $em): Response
+    {
         if (
             !$this->isGranted('ROLE_ADMIN')
             && $media->getUser() !== $this->getUser()
@@ -139,11 +123,8 @@ class MediaController extends AbstractController
             $uploadedFile = $form->get('file')->getData();
 
             if ($uploadedFile) {
-
                 if ($media->getPath()) {
-                    $oldPath = $this->getParameter('kernel.project_dir')
-                        . '/public/' . $media->getPath();
-
+                    $oldPath = $this->getParameter('kernel.project_dir') . '/public/' . $media->getPath();
                     if (file_exists($oldPath)) {
                         unlink($oldPath);
                     }
@@ -151,18 +132,13 @@ class MediaController extends AbstractController
 
                 $extension = $uploadedFile->guessExtension() ?? 'jpg';
                 $filename  = sprintf('%04d.%s', $media->getId(), $extension);
-                $target    = $this->getParameter('upload_directory') . '/' . $filename;
+                $target = $this->getParameter('upload_directory') . '/' . $filename;
 
-                $this->compressImage(
-                    $uploadedFile->getPathname(),
-                    $target
-                );
-
+                $this->compressImage($uploadedFile->getPathname(), $target);
                 $media->setPath('uploads/' . $filename);
             }
 
             $em->flush();
-
             $this->addFlash('success', 'Média modifié avec succès.');
 
             return $this->redirectToRoute('admin_media_index');
@@ -176,11 +152,8 @@ class MediaController extends AbstractController
     }
 
     #[Route('/admin/media/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
-    public function delete(
-        Media $media,
-        Request $request,
-        EntityManagerInterface $em
-    ): Response {
+    public function delete(Media $media, Request $request, EntityManagerInterface $em): Response
+    {
         if (
             ($this->getParameter('kernel.environment') !== 'test')
             && !$this->isCsrfTokenValid(
@@ -196,17 +169,12 @@ class MediaController extends AbstractController
             !$this->isGranted('ROLE_ADMIN')
             && $media->getUser() !== $this->getUser()
         ) {
-            $this->addFlash(
-                'danger',
-                'Vous n’êtes pas autorisé à supprimer ce média.'
-            );
+            $this->addFlash('danger', 'Suppression non autorisée.');
             return $this->redirectToRoute('admin_media_index');
         }
 
         if ($media->getPath()) {
-            $absolutePath = $this->getParameter('kernel.project_dir')
-                . '/public/' . $media->getPath();
-
+            $absolutePath = $this->getParameter('kernel.project_dir') . '/public/' . $media->getPath();
             if (file_exists($absolutePath)) {
                 unlink($absolutePath);
             }
@@ -220,27 +188,14 @@ class MediaController extends AbstractController
         return $this->redirectToRoute('admin_media_index');
     }
 
-    private function compressImage(
-        string $source,
-        string $destination,
-        int $quality = 85
-    ): void {
+    private function compressImage(string $source, string $destination, int $quality = 85): void
+    {
         $info = getimagesize($source);
 
         match ($info['mime']) {
-            'image/jpeg' => imagejpeg(
-                imagecreatefromjpeg($source),
-                $destination,
-                $quality
-            ),
-            'image/png' => imagepng(
-                imagecreatefrompng($source),
-                $destination,
-                6
-            ),
-            default => throw new RuntimeException(
-                'Format image non supporté'
-            ),
+            'image/jpeg' => imagejpeg(imagecreatefromjpeg($source), $destination, $quality),
+            'image/png'  => imagepng(imagecreatefrompng($source), $destination, 6),
+            default => throw new RuntimeException('Format image non supporté'),
         };
     }
 }

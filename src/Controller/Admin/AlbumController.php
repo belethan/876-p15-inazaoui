@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Album;
+use App\Entity\User;
 use App\Form\AlbumType;
 use App\Repository\AlbumRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,14 +17,16 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class AlbumController extends AbstractController
 {
     #[Route('/admin/album', name: 'admin_album_index', methods: ['GET'])]
-    public function index(
-        AlbumRepository $albumRepository
-    ): Response {
+    public function index(AlbumRepository $albumRepository): Response
+    {
         if ($this->isGranted('ROLE_ADMIN')) {
             $albums = $albumRepository->findAll();
         } else {
+            /** @var User $user */
+            $user = $this->getUser();
+
             $albums = $albumRepository->findBy([
-                'user' => $this->getUser()
+                'user' => $user,
             ]);
         }
 
@@ -33,14 +36,14 @@ class AlbumController extends AbstractController
     }
 
     #[Route('/admin/album/add', name: 'admin_album_add', methods: ['GET', 'POST'])]
-    public function add(
-        Request $request,
-        EntityManagerInterface $em
-    ): Response {
+    public function add(Request $request, EntityManagerInterface $em): Response
+    {
         $album = new Album();
 
         if (!$this->isGranted('ROLE_ADMIN')) {
-            $album->setUser($this->getUser());
+            /** @var User $user */
+            $user = $this->getUser();
+            $album->setUser($user);
         }
 
         $form = $this->createForm(AlbumType::class, $album);
@@ -63,11 +66,8 @@ class AlbumController extends AbstractController
     }
 
     #[Route('/admin/album/edit/{id}', name: 'admin_album_edit', methods: ['GET', 'POST'])]
-    public function edit(
-        Album $album,
-        Request $request,
-        EntityManagerInterface $em
-    ): Response {
+    public function edit(Album $album, Request $request, EntityManagerInterface $em): Response
+    {
         if (
             !$this->isGranted('ROLE_ADMIN')
             && $album->getUser() !== $this->getUser()
@@ -94,11 +94,8 @@ class AlbumController extends AbstractController
     }
 
     #[Route('/admin/album/delete/{id}', name: 'admin_album_delete', methods: ['POST'])]
-    public function delete(
-        Album $album,
-        Request $request,
-        EntityManagerInterface $em
-    ): Response {
+    public function delete(Album $album, Request $request, EntityManagerInterface $em): Response
+    {
         if (
             ($this->getParameter('kernel.environment') !== 'test')
             && !$this->isCsrfTokenValid(
@@ -114,10 +111,7 @@ class AlbumController extends AbstractController
             !$this->isGranted('ROLE_ADMIN')
             && $album->getUser() !== $this->getUser()
         ) {
-            $this->addFlash(
-                'danger',
-                'Vous n’êtes pas autorisé à supprimer cet album.'
-            );
+            $this->addFlash('danger', 'Vous n’êtes pas autorisé à supprimer cet album.');
             return $this->redirectToRoute('admin_album_index');
         }
 

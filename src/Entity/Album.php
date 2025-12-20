@@ -9,7 +9,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
 #[ORM\Table(name: 'album')]
 class Album
@@ -17,16 +16,23 @@ class Album
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private int|null $id = null;
-
+    private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     private string $name;
 
+    /**
+     * Propriétaire de l’album
+     */
+    #[ORM\ManyToOne(inversedBy: 'albums')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
+
     #[ORM\OneToMany(
         targetEntity: Media::class,
         mappedBy: 'album',
-        cascade: ['persist', 'remove']
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
     )]
     private Collection $media;
 
@@ -35,7 +41,7 @@ class Album
         $this->media = new ArrayCollection();
     }
 
-    public function getId(): int|null
+    public function getId(): ?int
     {
         return $this->id;
     }
@@ -51,6 +57,30 @@ class Album
 
         return $this;
     }
+
+    /**
+     * ======================
+     * Relation avec User
+     * ======================
+     */
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * ======================
+     * Relation avec Media
+     * ======================
+     */
 
     /** @return Collection<int, Media> */
     public function getMedia(): Collection
@@ -70,8 +100,10 @@ class Album
 
     public function removeMedia(Media $media): self
     {
-        if ($this->media->removeElement($media) && $media->getAlbum() === $this) {
-            $media->setAlbum(null);
+        if ($this->media->removeElement($media)) {
+            if ($media->getAlbum() === $this) {
+                $media->setAlbum(null);
+            }
         }
 
         return $this;

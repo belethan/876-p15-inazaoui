@@ -8,6 +8,9 @@ use App\Entity\Media;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
+/**
+ * @extends ServiceEntityRepository<Media>
+ */
 class MediaRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -17,11 +20,14 @@ class MediaRepository extends ServiceEntityRepository
 
     /**
      * Médias visibles (utilisateur actif uniquement)
+     *
+     * @param array<string, mixed> $criteria
+     * @return list<Media>
      */
     public function findVisibleMedias(
         array $criteria = [],
-        int $limit = null,
-        int $offset = null
+        ?int $limit = null,
+        ?int $offset = null
     ): array {
         $qb = $this->createQueryBuilder('m')
             ->innerJoin('m.user', 'u')
@@ -30,7 +36,7 @@ class MediaRepository extends ServiceEntityRepository
 
         // critères dynamiques (ex: user courant)
         foreach ($criteria as $field => $value) {
-            $qb->andWhere("m.$field = :$field")
+            $qb->andWhere(sprintf('m.%s = :%s', $field, $field))
                 ->setParameter($field, $value);
         }
 
@@ -42,11 +48,16 @@ class MediaRepository extends ServiceEntityRepository
             $qb->setFirstResult($offset);
         }
 
-        return $qb->getQuery()->getResult();
+        /** @var list<Media> $result */
+        $result = $qb->getQuery()->getResult();
+
+        return $result;
     }
 
     /**
      * Compteur de médias visibles
+     *
+     * @param array<string, mixed> $criteria
      */
     public function countVisibleMedias(array $criteria = []): int
     {
@@ -56,7 +67,7 @@ class MediaRepository extends ServiceEntityRepository
             ->andWhere('u.userActif = true');
 
         foreach ($criteria as $field => $value) {
-            $qb->andWhere("m.$field = :$field")
+            $qb->andWhere(sprintf('m.%s = :%s', $field, $field))
                 ->setParameter($field, $value);
         }
 

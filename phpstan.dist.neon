@@ -1,8 +1,16 @@
 parameters:
     level: 5
+
     paths:
-        - bin/
-        - config/
-        - public/
-        - src/
-        - tests/
+        - src
+
+    excludePaths:
+        - src/Command/*
+        - tests/*
+        - var/*
+        - vendor/*
+
+    treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        - '#Property App\\Entity\\.*::\$id .*#'
