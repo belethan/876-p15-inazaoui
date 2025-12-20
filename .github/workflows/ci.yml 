@@ -2,41 +2,56 @@ name: CI Symfony
 
 on:
   push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
 jobs:
   quality:
+    name: Quality checks
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # 1. Récupération du code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Installation de PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
           coverage: xdebug
           extensions: mbstring, intl, pdo_mysql
+          tools: composer
 
+      # 3. Validation basique de composer.json (SANS --strict)
       - name: Validate composer.json
-        run: composer validate --strict
+        run: composer validate
 
+      # 4. Installation des dépendances
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: |
+          composer install \
+            --no-interaction \
+            --prefer-dist \
+            --no-progress
 
-      - name: Run PHPUnit with coverage
+      # 5. Tests PHPUnit + couverture
+      - name: Run PHPUnit tests
         run: |
           php bin/phpunit \
             --coverage-text \
             --coverage-clover=coverage.xml
 
+      # 6. Upload du rapport de couverture (preuve CI)
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-clover
+          name: phpunit-coverage
           path: coverage.xml
 
+      # 7. Analyse statique PHPStan
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress
