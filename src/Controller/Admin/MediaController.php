@@ -11,7 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\attribute\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Throwable;
 
@@ -23,8 +23,9 @@ class MediaController extends AbstractController
         Request $request,
         MediaRepository $mediaRepository
     ): Response {
-        $page  = max(1, $request->query->getInt('page', 1));
-        $limit = 25;
+        $page   = max(1, $request->query->getInt('page', 1));
+        $limit  = 25;
+        $offset = ($page - 1) * $limit;
 
         $criteria = [];
 
@@ -32,17 +33,20 @@ class MediaController extends AbstractController
             $criteria['user'] = $this->getUser();
         }
 
-        $medias = $mediaRepository->findBy(
+        $medias = $mediaRepository->findVisibleMedias(
             $criteria,
-            ['id' => 'ASC'],
             $limit,
-            ($page - 1) * $limit
+            $offset
         );
 
-        $total      = $mediaRepository->count($criteria);
-        $totalPages = (int) ceil($total / $limit);
+        $total       = $mediaRepository->countVisibleMedias($criteria);
+        $totalPages  = (int) ceil($total / $limit);
 
-        return $this->render('admin/media/index.html.twig', compact('medias', 'page', 'totalPages'));
+        return $this->render('admin/media/index.html.twig', compact(
+            'medias',
+            'page',
+            'totalPages'
+        ));
     }
 
     #[Route('/admin/media/add', name: 'admin_media_add', methods: ['GET', 'POST'])]
@@ -54,8 +58,9 @@ class MediaController extends AbstractController
 
         $form = $this->createForm(MediaType::class, $media, [
             'is_admin' => $this->isGranted('ROLE_ADMIN'),
-            'is_edit' => false,
+            'is_edit'  => false,
         ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -68,13 +73,12 @@ class MediaController extends AbstractController
                 return $this->redirectToRoute('admin_media_index');
             }
 
-            // Attribution utilisateur
             if (!$this->isGranted('ROLE_ADMIN')) {
                 $media->setUser($this->getUser());
             }
 
             $em->persist($media);
-            $em->flush(); // nécessaire pour obtenir l’ID
+            $em->flush();
 
             $extension = $uploadedFile->guessExtension() ?? 'jpg';
             $filename  = sprintf('%04d.%s', $media->getId(), $extension);
@@ -95,23 +99,19 @@ class MediaController extends AbstractController
             } catch (Throwable $e) {
                 $this->addFlash(
                     'danger',
-                    'Erreur image : ' . $e->getMessage()
+                    'Erreur lors du traitement de l’image : ' . $e->getMessage()
                 );
             }
 
             return $this->redirectToRoute('admin_media_index');
         }
 
-        return $this->render('admin/media/add.html.twig', [
-            'form' => $form->createView(),
+        return $this->render('admin/media/form.html.twig', [
+            'form'   => $form->createView(),
+            'media'  => $media,
+            'isEdit' => false,
         ]);
     }
-
-    #[Route(
-        '/admin/media/delete/{id}',
-        name: 'admin_media_delete',
-        methods: ['POST']
-    )]
 
     #[Route('/admin/media/edit/{id}', name: 'admin_media_edit', methods: ['GET', 'POST'])]
     public function edit(
@@ -119,7 +119,6 @@ class MediaController extends AbstractController
         Request $request,
         EntityManagerInterface $em
     ): Response {
-        // Sécurité utilisateur
         if (
             !$this->isGranted('ROLE_ADMIN')
             && $media->getUser() !== $this->getUser()
@@ -129,8 +128,9 @@ class MediaController extends AbstractController
 
         $form = $this->createForm(MediaType::class, $media, [
             'is_admin' => $this->isGranted('ROLE_ADMIN'),
-            'is_edit' => true,
+            'is_edit'  => true,
         ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -140,7 +140,6 @@ class MediaController extends AbstractController
 
             if ($uploadedFile) {
 
-                // Suppression ancienne image
                 if ($media->getPath()) {
                     $oldPath = $this->getParameter('kernel.project_dir')
                         . '/public/' . $media->getPath();
@@ -169,28 +168,30 @@ class MediaController extends AbstractController
             return $this->redirectToRoute('admin_media_index');
         }
 
-        return $this->render('admin/media/edit.html.twig', [
-            'form' => $form->createView(),
-            'media' => $media,
+        return $this->render('admin/media/form.html.twig', [
+            'form'   => $form->createView(),
+            'media'  => $media,
+            'isEdit' => true,
         ]);
     }
 
-
+    #[Route('/admin/media/delete/{id}', name: 'admin_media_delete', methods: ['POST'])]
     public function delete(
         Media $media,
         Request $request,
         EntityManagerInterface $em
     ): Response {
-        // CSRF UNIQUEMENT hors environnement test
-        if (($this->getParameter('kernel.environment') !== 'test') && !$this->isCsrfTokenValid(
+        if (
+            ($this->getParameter('kernel.environment') !== 'test')
+            && !$this->isCsrfTokenValid(
                 'delete_media_' . $media->getId(),
                 $request->request->get('_token')
-            )) {
-                $this->addFlash('danger', 'Jeton CSRF invalide.');
-                return $this->redirectToRoute('admin_media_index');
-            }
+            )
+        ) {
+            $this->addFlash('danger', 'Jeton CSRF invalide.');
+            return $this->redirectToRoute('admin_media_index');
+        }
 
-        // 🔐 Sécurité utilisateur
         if (
             !$this->isGranted('ROLE_ADMIN')
             && $media->getUser() !== $this->getUser()
@@ -202,7 +203,6 @@ class MediaController extends AbstractController
             return $this->redirectToRoute('admin_media_index');
         }
 
-        // 🗑️ Suppression fichier physique
         if ($media->getPath()) {
             $absolutePath = $this->getParameter('kernel.project_dir')
                 . '/public/' . $media->getPath();
@@ -212,7 +212,6 @@ class MediaController extends AbstractController
             }
         }
 
-        // 🗑️ Suppression base
         $em->remove($media);
         $em->flush();
 
@@ -221,9 +220,6 @@ class MediaController extends AbstractController
         return $this->redirectToRoute('admin_media_index');
     }
 
-    /**
-     * Compression image JPG / PNG
-     */
     private function compressImage(
         string $source,
         string $destination,

@@ -9,12 +9,18 @@ use App\Repository\AlbumRepository;
 use App\Tests\Support\TestUserFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Routing\RouterInterface;
 
 class AlbumControllerTest extends WebTestCase
 {
     private function getEntityManager($client): EntityManagerInterface
     {
         return $client->getContainer()->get(EntityManagerInterface::class);
+    }
+
+    private function getRouter($client): RouterInterface
+    {
+        return $client->getContainer()->get(RouterInterface::class);
     }
 
     private function truncateTables(EntityManagerInterface $em): void
@@ -55,11 +61,9 @@ class AlbumControllerTest extends WebTestCase
         $this->truncateTables($em);
         $this->loginAsAdmin($client, $em);
 
-        // 🔑 Initialise la session
         $crawler = $client->request('GET', '/admin/album/add');
         self::assertResponseIsSuccessful();
 
-        // 🔑 Soumission sans dépendre du bouton
         $form = $crawler->filter('form')->form([
             'album[name]' => 'Album fonctionnel',
         ]);
@@ -69,27 +73,34 @@ class AlbumControllerTest extends WebTestCase
         self::assertResponseRedirects('/admin/album');
 
         $repo = $client->getContainer()->get(AlbumRepository::class);
-        self::assertNotNull($repo->findOneBy(['name' => 'Album fonctionnel']));
+        self::assertNotNull(
+            $repo->findOneBy(['name' => 'Album fonctionnel'])
+        );
     }
 
     public function testUpdateAlbum(): void
     {
         $client = static::createClient();
         $em = $this->getEntityManager($client);
+        $router = $this->getRouter($client);
 
         $this->truncateTables($em);
         $this->loginAsAdmin($client, $em);
 
+        //  Création album
         $album = (new Album())->setName('Album original');
         $em->persist($album);
         $em->flush();
 
         $albumId = $album->getId();
+        self::assertNotNull($albumId);
 
-        $crawler = $client->request(
-            'GET',
-            '/admin/album/update/' . $albumId
-        );
+        //  Route EDIT (pas UPDATE)
+        $editUrl = $router->generate('admin_album_edit', [
+            'id' => $albumId,
+        ]);
+
+        $crawler = $client->request('GET', $editUrl);
         self::assertResponseIsSuccessful();
 
         $form = $crawler->filter('form')->form([
@@ -97,14 +108,16 @@ class AlbumControllerTest extends WebTestCase
         ]);
 
         $client->submit($form);
+
         self::assertResponseRedirects('/admin/album');
 
-        // 🔑 relire l’entité depuis la DB
+        //  Rechargement depuis la DB
+        $em->clear();
         $updatedAlbum = $em->getRepository(Album::class)->find($albumId);
 
+        self::assertNotNull($updatedAlbum);
         self::assertSame('Album modifié', $updatedAlbum->getName());
     }
-
 
     public function testDeleteAlbum(): void
     {
@@ -114,18 +127,17 @@ class AlbumControllerTest extends WebTestCase
         $this->truncateTables($em);
         $this->loginAsAdmin($client, $em);
 
-        // Création d’un album
-        $album = (new \App\Entity\Album())->setName('Album à supprimer');
+        $album = (new Album())->setName('Album à supprimer');
         $em->persist($album);
         $em->flush();
 
         $albumId = $album->getId();
+        self::assertNotNull($albumId);
 
-        // 1️⃣ Charger la page index (session + CSRF généré par Twig)
+        // Charger index pour générer CSRF
         $crawler = $client->request('GET', '/admin/album');
         self::assertResponseIsSuccessful();
 
-        // 2️⃣ Récupérer le bouton Supprimer correspondant à l’album
         $buttonSelector = sprintf(
             'button[data-delete-url="/admin/album/delete/%d"]',
             $albumId
@@ -134,24 +146,22 @@ class AlbumControllerTest extends WebTestCase
         self::assertSelectorExists($buttonSelector);
 
         $button = $crawler->filter($buttonSelector);
-
         $deleteUrl = $button->attr('data-delete-url');
         $csrfToken = $button->attr('data-delete-token');
 
         self::assertNotEmpty($deleteUrl);
         self::assertNotEmpty($csrfToken);
 
-        // 3️⃣ Simuler exactement la requête JS (POST avec _token)
+        //  POST réel
         $client->request('POST', $deleteUrl, [
             '_token' => $csrfToken,
         ]);
 
         self::assertResponseRedirects('/admin/album');
 
-        // 4️⃣ Vérifier suppression en base
-        $deleted = $em->getRepository(\App\Entity\Album::class)->find($albumId);
-        self::assertNull($deleted);
+        $em->clear();
+        self::assertNull(
+            $em->getRepository(Album::class)->find($albumId)
+        );
     }
-
-
 }

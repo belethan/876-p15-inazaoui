@@ -16,14 +16,14 @@ class MediaRepositoryTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $this->mediaRepository = self::getContainer()
+        $this->mediaRepository = static::getContainer()
             ->get(MediaRepository::class);
     }
 
     public function testFindByUser(): void
     {
-        $em = self::getContainer()->get('doctrine')->getManager();
-        $passwordHasher = self::getContainer()
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $passwordHasher = static::getContainer()
             ->get(UserPasswordHasherInterface::class);
 
         // User de test

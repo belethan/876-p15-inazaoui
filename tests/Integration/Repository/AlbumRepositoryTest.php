@@ -2,54 +2,55 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Repository;
+namespace App\Tests\Integration\Repository;
 
 use App\Entity\Album;
+use App\Repository\AlbumRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class AlbumRepositoryTest extends KernelTestCase
 {
     private EntityManagerInterface $em;
+    private AlbumRepository $repository;
 
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->em = static::getContainer()->get(EntityManagerInterface::class);
 
-        $this->truncateAlbumTable();
+        $this->em = static::getContainer()->get(EntityManagerInterface::class);
+        $this->repository = $this->em->getRepository(Album::class);
+
+        $this->truncateTable();
     }
 
-    private function truncateAlbumTable(): void
+    private function truncateTable(): void
     {
-        $connection = $this->em->getConnection();
-        $platform = $connection->getDatabasePlatform();
+        $conn = $this->em->getConnection();
+        $platform = $conn->getDatabasePlatform();
 
-        $connection->executeStatement('SET FOREIGN_KEY_CHECKS=0');
-        $connection->executeStatement(
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement(
             $platform->getTruncateTableSQL('album', true)
         );
-        $connection->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
     }
 
     public function testPersistAndFindAlbum(): void
     {
-        $album = new Album();
-        $album->setName('Album Repository Test');
+        $album = (new Album())->setName('Album Test');
 
         $this->em->persist($album);
         $this->em->flush();
         $this->em->clear();
 
-        $repo = $this->em->getRepository(Album::class);
+        $found = $this->repository->findOneBy(['name' => 'Album Test']);
 
-        $found = $repo->findOneBy(['name' => 'Album Repository Test']);
-
-        $this->assertNotNull($found);
-        $this->assertSame('Album Repository Test', $found->getName());
+        self::assertNotNull($found);
+        self::assertSame('Album Test', $found->getName());
     }
 
-    public function testFindAll(): void
+    public function testFindAllReturnsArray(): void
     {
         $album1 = (new Album())->setName('Album 1');
         $album2 = (new Album())->setName('Album 2');
@@ -58,9 +59,27 @@ class AlbumRepositoryTest extends KernelTestCase
         $this->em->persist($album2);
         $this->em->flush();
 
-        $albums = $this->em->getRepository(Album::class)->findAll();
+        $albums = $this->repository->findAll();
 
-        $this->assertCount(2, $albums);
+        self::assertIsArray($albums);
+        self::assertCount(2, $albums);
+    }
+
+    public function testCountAlbums(): void
+    {
+        $album = (new Album())->setName('Album Count');
+
+        $this->em->persist($album);
+        $this->em->flush();
+
+        $count = $this->repository->count([]);
+
+        self::assertSame(1, $count);
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $this->em->close();
     }
 }
-

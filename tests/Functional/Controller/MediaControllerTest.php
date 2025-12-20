@@ -73,7 +73,14 @@ class MediaControllerTest extends WebTestCase
         );
 
         // 3️⃣ Redirection attendue
-        self::assertResponseRedirects('/admin/media');
+         self::assertResponseRedirects('/admin/media');
+        $em->clear();
+        self::assertNull(
+            $em->getRepository(Media::class)->find($media->getId())
+        );
+
+        //self::assertResponseIsSuccessful();
+
 
         // 4️⃣ Vérification suppression
         $em->clear();

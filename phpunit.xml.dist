@@ -10,6 +10,7 @@
         failOnRisky="true"
         failOnWarning="true"
 >
+
     <!-- ===================== -->
     <!-- Test suites           -->
     <!-- ===================== -->
@@ -20,29 +21,24 @@
     </testsuites>
 
     <!-- ===================== -->
-    <!-- Code source analysé   -->
-    <!-- (Coverage ciblé)      -->
+    <!-- Source (Coverage)     -->
     <!-- ===================== -->
     <source>
-        <!-- Code métier uniquement -->
         <include>
-            <directory suffix=".php">src/Entity</directory>
-            <directory suffix=".php">src/Repository</directory>
+            <directory suffix=".php">src</directory>
         </include>
 
-        <!-- Exclusions explicites -->
         <exclude>
-            <directory>src/Command</directory>
             <directory>src/Controller</directory>
+            <directory>src/Command</directory>
             <directory>src/DataFixtures</directory>
-            <directory>src/Form</directory>
-            <directory>src/Security</directory>
+            <directory>src/Migrations</directory>
             <file>src/Kernel.php</file>
         </exclude>
     </source>
 
     <!-- ===================== -->
-    <!-- Environnement PHP     -->
+    <!-- PHP environment       -->
     <!-- ===================== -->
     <php>
         <!-- Symfony -->
@@ -51,8 +47,12 @@
         <env name="KERNEL_CLASS" value="App\Kernel"/>
         <env name="SHELL_VERBOSITY" value="-1"/>
 
-        <!-- Doctrine : base de TEST -->
+        <!-- Désactivation des dépréciations -->
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
+
+        <!-- Doctrine -->
         <env name="DATABASE_URL"
              value="mysql://admludo:Coqwheel!9729@127.0.0.1:3306/inazaoui?serverVersion=8.0&amp;charset=utf8mb4"/>
     </php>
+
 </phpunit>
