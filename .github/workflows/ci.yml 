@@ -2,8 +2,7 @@ name: CI Symfony
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
   workflow_dispatch:
 
@@ -12,9 +11,6 @@ jobs:
     name: Quality checks (MySQL)
     runs-on: ubuntu-latest
 
-    # =========================
-    # Service MySQL
-    # =========================
     services:
       mysql:
         image: mysql:8.0
@@ -32,15 +28,10 @@ jobs:
           --health-retries=5
 
     steps:
-      # =========================
-      # 1. Checkout du code
-      # =========================
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # 1. Checkout
+      - uses: actions/checkout@v4
 
-      # =========================
-      # 2. Setup PHP
-      # =========================
+      # 2. PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -49,25 +40,18 @@ jobs:
           extensions: mbstring, intl, pdo_mysql
           tools: composer
 
-      # =========================
-      # 3. Validation composer.json
-      # =========================
+      # 3. Client MySQL (OBLIGATOIRE)
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      # 4. Composer
       - name: Validate composer.json
         run: composer validate --no-check-publish
 
-      # =========================
-      # 4. Installation des dépendances
-      # =========================
       - name: Install dependencies
-        run: |
-          composer install \
-            --no-interaction \
-            --prefer-dist \
-            --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      # =========================
-      # 5. Attente MySQL (sécurité)
-      # =========================
+      # 5. Attente MySQL (CORRECTE)
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
@@ -75,9 +59,7 @@ jobs:
             sleep 2
           done
 
-      # =========================
-      # 6. Préparation base de tests
-      # =========================
+      # 6. Doctrine (MySQL)
       - name: Prepare test database
         env:
           APP_ENV: test
@@ -86,29 +68,20 @@ jobs:
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
 
-      # =========================
-      # 7. PHPUnit + couverture
-      # =========================
+      # 7. PHPUnit
       - name: Run PHPUnit Tests
         env:
           APP_ENV: test
           DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0
-        run: |
-          php bin/phpunit \
-            --coverage-text \
-            --coverage-clover=coverage.xml
+        run: php bin/phpunit --coverage-text --coverage-clover=coverage.xml
 
-      # =========================
-      # 8. Upload couverture
-      # =========================
+      # 8. Coverage
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: phpunit-coverage
           path: coverage.xml
 
-      # =========================
-      # 9. Analyse statique PHPStan
-      # =========================
+      # 9. PHPStan
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress
