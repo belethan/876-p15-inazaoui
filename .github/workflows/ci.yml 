@@ -1,0 +1,36 @@
+name: CI Symfony
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Récupération du code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Installation de PHP avec Xdebug
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: xdebug
+          extensions: mbstring, intl, pdo_mysql
+
+      # 3. Validation du fichier composer.json
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      # 4. Installation des dépendances
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      # 5. Exécution des tests PHPUnit
+      - name: Run PHPUnit
+        run: php bin/phpunit
