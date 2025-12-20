@@ -11,10 +11,6 @@ jobs:
     name: Quality checks (MySQL)
     runs-on: ubuntu-latest
 
-    # =========================
-    # Service MySQL (Docker)
-    # Accès via localhost
-    # =========================
     services:
       mysql:
         image: mysql:8.0
@@ -32,15 +28,8 @@ jobs:
           --health-retries=5
 
     steps:
-      # =========================
-      # 1. Checkout
-      # =========================
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # =========================
-      # 2. PHP
-      # =========================
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -49,21 +38,12 @@ jobs:
           extensions: mbstring, intl, pdo_mysql
           tools: composer
 
-      # =========================
-      # 3. Client MySQL (obligatoire)
-      # =========================
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      # =========================
-      # 4. Dépendances PHP
-      # =========================
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      # =========================
-      # 5. Attente MySQL
-      # =========================
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
@@ -71,28 +51,17 @@ jobs:
             sleep 2
           done
 
-      # =========================
-      # 6. Préparation DB de test
-      # =========================
       - name: Prepare test database
         env:
           APP_ENV: test
-          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0
         run: |
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
 
-      # =========================
-      # 7. PHPUnit
-      # =========================
       - name: Run PHPUnit
         env:
           APP_ENV: test
-          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0
         run: php bin/phpunit
 
-      # =========================
-      # 8. PHPStan
-      # =========================
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress
