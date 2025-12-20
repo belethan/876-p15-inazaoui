@@ -9,15 +9,38 @@ on:
 
 jobs:
   quality:
-    name: Quality checks
+    name: Quality checks (MySQL)
     runs-on: ubuntu-latest
 
+    # =========================
+    # Service MySQL
+    # =========================
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: inazaoui_test
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
-      # 1. Récupération du code
+      # =========================
+      # 1. Checkout du code
+      # =========================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Installation de PHP
+      # =========================
+      # 2. Setup PHP
+      # =========================
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -26,11 +49,15 @@ jobs:
           extensions: mbstring, intl, pdo_mysql
           tools: composer
 
-      # 3. Validation basique de composer.json (SANS --strict)
+      # =========================
+      # 3. Validation composer.json
+      # =========================
       - name: Validate composer.json
         run: composer validate --no-check-publish
 
+      # =========================
       # 4. Installation des dépendances
+      # =========================
       - name: Install dependencies
         run: |
           composer install \
@@ -38,20 +65,50 @@ jobs:
             --prefer-dist \
             --no-progress
 
-      # 5. Tests PHPUnit + couverture
+      # =========================
+      # 5. Attente MySQL (sécurité)
+      # =========================
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping -h 127.0.0.1 -u root -proot && break
+            sleep 2
+          done
+
+      # =========================
+      # 6. Préparation base de tests
+      # =========================
+      - name: Prepare test database
+        env:
+          APP_ENV: test
+          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0
+        run: |
+          php bin/console doctrine:database:create --if-not-exists
+          php bin/console doctrine:schema:create
+
+      # =========================
+      # 7. PHPUnit + couverture
+      # =========================
       - name: Run PHPUnit Tests
+        env:
+          APP_ENV: test
+          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0
         run: |
           php bin/phpunit \
             --coverage-text \
             --coverage-clover=coverage.xml
 
-      # 6. Upload du rapport de couverture (preuve CI)
+      # =========================
+      # 8. Upload couverture
+      # =========================
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: phpunit-coverage
           path: coverage.xml
 
-      # 7. Analyse statique PHPStan
+      # =========================
+      # 9. Analyse statique PHPStan
+      # =========================
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress
