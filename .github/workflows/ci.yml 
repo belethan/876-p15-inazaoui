@@ -11,6 +11,10 @@ jobs:
     name: Quality checks (MySQL)
     runs-on: ubuntu-latest
 
+    # 🔑 PHP DANS UN CONTENEUR
+    container:
+      image: php:8.4-cli
+
     services:
       mysql:
         image: mysql:8.0
@@ -19,27 +23,31 @@ jobs:
           MYSQL_DATABASE: inazaoui_test
           MYSQL_USER: test
           MYSQL_PASSWORD: test
-        ports:
-          - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --protocol=tcp -h 127.0.0.1 -u root -proot"
+          --health-cmd="mysqladmin ping -h mysql -u root -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          coverage: xdebug
-          extensions: mbstring, intl, pdo_mysql
-          tools: composer
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            git unzip zip libzip-dev \
+            default-mysql-client
 
-      - name: Install MySQL client
-        run: sudo apt-get update && sudo apt-get install -y mysql-client
+      - name: Install PHP extensions
+        run: |
+          docker-php-ext-install pdo_mysql zip intl
+
+      - name: Install Composer
+        run: |
+          php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+          php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -47,19 +55,14 @@ jobs:
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            mysqladmin ping --protocol=tcp -h 127.0.0.1 -u root -proot && break
+            mysqladmin ping -h mysql -u root -proot && break
             sleep 2
           done
-
-      - name: Clear Symfony cache
-        env:
-          APP_ENV: test
-        run: php bin/console cache:clear --env=test
 
       - name: Prepare test database
         env:
           APP_ENV: test
-          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0&charset=utf8mb4
+          DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
         run: |
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
@@ -67,7 +70,7 @@ jobs:
       - name: Run PHPUnit
         env:
           APP_ENV: test
-          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0&charset=utf8mb4
+          DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
         run: php bin/phpunit
 
       - name: Run PHPStan
