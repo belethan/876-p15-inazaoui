@@ -22,17 +22,14 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -proot"
+          --health-cmd="mysqladmin ping --protocol=tcp -h 127.0.0.1 -u root -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      # 1. Checkout du code
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 2. Installation PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -41,42 +38,37 @@ jobs:
           extensions: mbstring, intl, pdo_mysql
           tools: composer
 
-      # 3. Client MySQL (nécessaire pour mysqladmin)
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      # 4. Dépendances PHP
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      # 5. Attente MySQL
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            mysqladmin ping -h 127.0.0.1 -u root -proot && break
+            mysqladmin ping --protocol=tcp -h 127.0.0.1 -u root -proot && break
             sleep 2
           done
 
-      # 6. Nettoyage du cache Symfony (CRITIQUE)
       - name: Clear Symfony cache
         env:
           APP_ENV: test
         run: php bin/console cache:clear --env=test
 
-      # 7. Préparation de la base de tests
       - name: Prepare test database
         env:
           APP_ENV: test
+          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0&charset=utf8mb4
         run: |
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
 
-      # 8. PHPUnit
       - name: Run PHPUnit
         env:
           APP_ENV: test
+          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0&charset=utf8mb4
         run: php bin/phpunit
 
-      # 9. PHPStan
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress
