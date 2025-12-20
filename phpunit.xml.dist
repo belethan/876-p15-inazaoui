@@ -50,9 +50,11 @@
         <!-- Désactivation des dépréciations -->
         <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
 
-        <!-- Doctrine -->
-        <env name="DATABASE_URL"
-             value="mysql://admludo:Coqwheel!9729@127.0.0.1:3306/inazaoui?serverVersion=8.0&amp;charset=utf8mb4"/>
+        <!-- Doctrine (CI + Tests fonctionnels) -->
+        <env
+                name="DATABASE_URL"
+                value="mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0&amp;charset=utf8mb4"
+        />
     </php>
 
 </phpunit>

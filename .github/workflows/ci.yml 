@@ -19,19 +19,15 @@ jobs:
           MYSQL_DATABASE: inazaoui_test
           MYSQL_USER: test
           MYSQL_PASSWORD: test
-        ports:
-          - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -proot"
+          --health-cmd="mysqladmin ping -h mysql -u root -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      # 1. Checkout
       - uses: actions/checkout@v4
 
-      # 2. PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -40,48 +36,23 @@ jobs:
           extensions: mbstring, intl, pdo_mysql
           tools: composer
 
-      # 3. Client MySQL (OBLIGATOIRE)
-      - name: Install MySQL client
-        run: sudo apt-get update && sudo apt-get install -y mysql-client
-
-      # 4. Composer
-      - name: Validate composer.json
-        run: composer validate --no-check-publish
-
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      # 5. Attente MySQL (CORRECTE)
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            mysqladmin ping -h 127.0.0.1 -u root -proot && break
+            mysqladmin ping -h mysql -u root -proot && break
             sleep 2
           done
 
-      # 6. Doctrine (MySQL)
       - name: Prepare test database
-        env:
-          APP_ENV: test
-          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0
         run: |
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
 
-      # 7. PHPUnit
-      - name: Run PHPUnit Tests
-        env:
-          APP_ENV: test
-          DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0
-        run: php bin/phpunit --coverage-text --coverage-clover=coverage.xml
+      - name: Run PHPUnit
+        run: php bin/phpunit
 
-      # 8. Coverage
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: phpunit-coverage
-          path: coverage.xml
-
-      # 9. PHPStan
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --no-progress
