@@ -11,7 +11,7 @@ jobs:
     name: Quality checks (MySQL)
     runs-on: ubuntu-latest
 
-    # 🔑 PHP DANS UN CONTENEUR
+    # PHP dans un conteneur Docker
     container:
       image: php:8.4-cli
 
@@ -29,6 +29,10 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+    env:
+      APP_ENV: test
+      DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,7 +41,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y \
-            git unzip zip libzip-dev \
+            git unzip zip libzip-dev libicu-dev \
             default-mysql-client
 
       - name: Install PHP extensions
@@ -50,7 +54,8 @@ jobs:
           php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
 
       - name: Wait for MySQL
         run: |
@@ -60,17 +65,12 @@ jobs:
           done
 
       - name: Prepare test database
-        env:
-          APP_ENV: test
-          DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
         run: |
-          php bin/console doctrine:database:create --if-not-exists
+          php bin/console doctrine:database:drop --if-exists --force
+          php bin/console doctrine:database:create
           php bin/console doctrine:schema:create
 
       - name: Run PHPUnit
-        env:
-          APP_ENV: test
-          DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
         run: php bin/phpunit
 
       - name: Run PHPStan
