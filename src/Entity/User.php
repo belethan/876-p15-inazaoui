@@ -11,8 +11,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use SensitiveParameter;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'user')]
@@ -47,6 +47,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTimeInterface $updatedAt = null;
 
+    /**
+     * @var Collection<int, Media>
+     */
     #[ORM\OneToMany(
         targetEntity: Media::class,
         mappedBy: 'user',
@@ -55,6 +58,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     )]
     private Collection $medias;
 
+    /**
+     * @var Collection<int, Album>
+     */
     #[ORM\OneToMany(
         targetEntity: Album::class,
         mappedBy: 'user',
@@ -87,6 +93,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(#[SensitiveParameter] string $email): self
     {
         $this->email = $email;
+
         return $this;
     }
 
@@ -103,6 +110,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;
+
         return $this;
     }
 
@@ -114,10 +122,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(#[SensitiveParameter] string $password): self
     {
         $this->password = $password;
+
         return $this;
     }
 
-    public function eraseCredentials(): void {}
+    public function eraseCredentials(): void
+    {
+        // Nothing to do
+    }
 
     public function getNom(): ?string
     {
@@ -127,6 +139,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setNom(?string $nom): self
     {
         $this->nom = $nom;
+
         return $this;
     }
 
@@ -138,6 +151,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPrenom(?string $prenom): self
     {
         $this->prenom = $prenom;
+
         return $this;
     }
 
@@ -149,6 +163,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUserActif(bool $userActif): self
     {
         $this->userActif = $userActif;
+
         return $this;
     }
 
@@ -160,6 +175,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCreatedAt(DateTimeInterface $createdAt): self
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
@@ -171,11 +187,87 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUpdatedAt(?DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 
     public function getFullName(): string
     {
         return trim(($this->prenom ?? '') . ' ' . ($this->nom ?? ''));
+    }
+
+    /* =======================
+     * RELATIONS: MEDIAS
+     * ======================= */
+
+    /**
+     * @return Collection<int, Media>
+     */
+    public function getMedias(): Collection
+    {
+        return $this->medias;
+    }
+
+    public function addMedia(Media $media): self
+    {
+        if (!$this->medias->contains($media)) {
+            $this->medias->add($media);
+
+            // synchronisation côté owning (Media.user)
+            if ($media->getUser() !== $this) {
+                $media->setUser($this);
+            }
+        }
+
+        return $this;
+    }
+
+    public function removeMedia(Media $media): self
+    {
+        if ($this->medias->removeElement($media)) {
+            // si le média pointe encore vers ce user, on casse le lien
+            if ($media->getUser() === $this) {
+                $media->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /* =======================
+     * RELATIONS: ALBUMS
+     * ======================= */
+
+    /**
+     * @return Collection<int, Album>
+     */
+    public function getAlbums(): Collection
+    {
+        return $this->albums;
+    }
+
+    public function addAlbum(Album $album): self
+    {
+        if (!$this->albums->contains($album)) {
+            $this->albums->add($album);
+
+            // synchronisation côté owning (Album.user)
+            if ($album->getUser() !== $this) {
+                $album->setUser($this);
+            }
+        }
+
+        return $this;
+    }
+
+    public function removeAlbum(Album $album): self
+    {
+        if ($this->albums->removeElement($album)) {
+            if ($album->getUser() === $this) {
+                $album->setUser(null);
+            }
+        }
+
+        return $this;
     }
 }
