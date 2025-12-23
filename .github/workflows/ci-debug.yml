@@ -18,15 +18,17 @@ jobs:
           MYSQL_DATABASE: inazaoui_test
           MYSQL_USER: test
           MYSQL_PASSWORD: test
+        ports:
+          - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h mysql -u root -proot"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     env:
       APP_ENV: test
-      DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
+      DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0
 
     steps:
       - name: Checkout code
@@ -48,7 +50,7 @@ jobs:
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            mysqladmin ping -h mysql -u root -proot && break
+            mysqladmin ping -h 127.0.0.1 -u root -proot && break
             sleep 2
           done
 
