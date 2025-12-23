@@ -19,6 +19,9 @@
 /phpunit.xml
 ###< symfony/phpunit-bridge ###
 
+# PHPUnit cache & coverage
+.phpunit.cache/
+.phpunit.cache/**
 ###> symfony/asset-mapper ###
 /public/assets/
 /assets/vendor/

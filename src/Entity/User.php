@@ -38,7 +38,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $prenom = null;
 
-    #[ORM\Column(name: 'user_actif', type: 'boolean', options: ['default' => true])]
+    #[ORM\Column(name: 'user_actif', type: 'boolean')]
     private bool $userActif = true;
 
     #[ORM\Column(type: 'datetime')]
@@ -47,24 +47,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTimeInterface $updatedAt = null;
 
-    /**
-     * Médias appartenant à l’utilisateur
-     */
     #[ORM\OneToMany(
         targetEntity: Media::class,
         mappedBy: 'user',
-        cascade: ['persist', 'remove'],
+        cascade: ['remove'],
         orphanRemoval: true
     )]
     private Collection $medias;
 
-    /**
-     * Albums appartenant à l’utilisateur
-     */
     #[ORM\OneToMany(
         targetEntity: Album::class,
         mappedBy: 'user',
-        cascade: ['persist', 'remove'],
+        cascade: ['remove'],
         orphanRemoval: true
     )]
     private Collection $albums;
@@ -75,6 +69,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->albums = new ArrayCollection();
         $this->createdAt = new DateTimeImmutable();
     }
+
+    /* =======================
+     * GETTERS / SETTERS
+     * ======================= */
 
     public function getId(): ?int
     {
@@ -92,9 +90,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * Symfony utilise cette méthode comme identifiant unique du user.
-     */
     public function getUserIdentifier(): string
     {
         return $this->email;
@@ -102,10 +97,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
-        $roles = $this->roles;
-        $roles[] = 'ROLE_USER';
-
-        return array_unique($roles);
+        return array_unique(array_merge($this->roles, ['ROLE_USER']));
     }
 
     public function setRoles(array $roles): self
@@ -125,9 +117,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function eraseCredentials(): void
-    {
-    }
+    public function eraseCredentials(): void {}
 
     public function getNom(): ?string
     {
@@ -181,52 +171,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUpdatedAt(?DateTimeInterface $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
-        return $this;
-    }
-
-    /** @return Collection<int, Media> */
-    public function getMedias(): Collection
-    {
-        return $this->medias;
-    }
-
-    public function addMedia(Media $media): self
-    {
-        if (!$this->medias->contains($media)) {
-            $this->medias->add($media);
-            $media->setUser($this);
-        }
-        return $this;
-    }
-
-    public function removeMedia(Media $media): self
-    {
-        if ($this->medias->removeElement($media) && $media->getUser() === $this) {
-            $media->setUser(null);
-        }
-        return $this;
-    }
-
-    /** @return Collection<int, Album> */
-    public function getAlbums(): Collection
-    {
-        return $this->albums;
-    }
-
-    public function addAlbum(Album $album): self
-    {
-        if (!$this->albums->contains($album)) {
-            $this->albums->add($album);
-            $album->setUser($this);
-        }
-        return $this;
-    }
-
-    public function removeAlbum(Album $album): self
-    {
-        if ($this->albums->removeElement($album) && $album->getUser() === $this) {
-            $album->setUser(null);
-        }
         return $this;
     }
 

@@ -28,7 +28,7 @@ class MediaRepositoryTest extends KernelTestCase
 
         // User de test
         $user = new User();
-        $user->setEmail('repo_' . uniqid() . '@test.com');
+        $user->setEmail('repo_' . uniqid('', true) . '@test.com');
         $user->setRoles(['ROLE_USER']);
         $user->setUserActif(true);
         $user->setPassword(
@@ -41,14 +41,13 @@ class MediaRepositoryTest extends KernelTestCase
         $media = new Media();
         $media->setTitle('Media repo test');
         $media->setUser($user);
+        $media->setDescription('Media repo test');
 
         $em->persist($media);
         $em->flush();
 
         // Test repository
-        $result = $this->mediaRepository->findBy([
-            'user' => $user,
-        ]);
+        $result = $this->mediaRepository->findBy(compact('user'));
 
         $this->assertCount(1, $result);
         $this->assertSame($media, $result[0]);

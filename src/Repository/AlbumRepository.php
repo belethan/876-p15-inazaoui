@@ -1,19 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\Album;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @extends ServiceEntityRepository<Album>
- *
- * @method Album|null find($id, $lockMode = null, $lockVersion = null)
- * @method Album|null findOneBy(array $criteria, array $orderBy = null)
- * @method Album[]    findAll()
- * @method Album[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
- */
 class AlbumRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -21,16 +15,47 @@ class AlbumRepository extends ServiceEntityRepository
         parent::__construct($registry, Album::class);
     }
 
-    public function findAlbumsWithVisibleMedias(): array
+    /**
+     * Albums avec leur propriétaire et leurs médias
+     */
+    public function findAllWithMediaAndUser(): array
     {
         return $this->createQueryBuilder('a')
-            ->leftJoin('a.medias', 'm')
-            ->leftJoin('m.user', 'u')
-            ->andWhere('u.userActif = true')
+            ->leftJoin('a.media', 'm')
             ->addSelect('m')
+            ->leftJoin('a.user', 'u')
             ->addSelect('u')
+            ->orderBy('a.id', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
+    /**
+     * Albums d’un utilisateur donné
+     */
+    public function findByUser(int $userId): array
+    {
+        return $this->createQueryBuilder('a')
+            ->andWhere('a.user = :user')
+            ->setParameter('user', $userId)
+            ->orderBy('a.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Albums avec médias visibles (ex : utilisateur actif)
+     */
+    public function findAlbumsWithVisibleMedias(): array
+    {
+        return $this->createQueryBuilder('a')
+            ->leftJoin('a.media', 'm')
+            ->addSelect('m')
+            ->leftJoin('m.user', 'u')
+            ->addSelect('u')
+            ->andWhere('u.userActif = true')
+            ->orderBy('a.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -22,26 +22,22 @@ class Media
     #[ORM\Column(length: 255)]
     private string $title;
 
-    #[ORM\Column(type: 'string', length: 255)]
-    private ?string $description = null;
+    #[ORM\Column(length: 255, nullable: true)]
+    private string|null $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'medias')]
-    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private User|null $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'media')]
-    #[ORM\JoinColumn(name: 'album_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     private Album|null $album = null;
 
     public function getId(): int|null
-    {
-        return $this->id;
-    }
+    { return $this->id; }
 
     public function getPath(): string|null
-    {
-        return $this->path;
-    }
+    { return $this->path; }
 
     public function setPath(string|null $path): self
     {
@@ -49,10 +45,7 @@ class Media
         return $this;
     }
 
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
+    public function getTitle(): string { return $this->title; }
 
     public function setTitle(string $title): self
     {
@@ -60,10 +53,17 @@ class Media
         return $this;
     }
 
-    public function getUser(): User|null
+    public function getDescription(): string|null
+    { return $this->description; }
+
+    public function setDescription(string|null $description): self
     {
-        return $this->user;
+        $this->description = $description;
+        return $this;
     }
+
+    public function getUser(): User|null
+    { return $this->user; }
 
     public function setUser(User|null $user): self
     {
@@ -72,25 +72,11 @@ class Media
     }
 
     public function getAlbum(): Album|null
-    {
-        return $this->album;
-    }
+    { return $this->album; }
 
     public function setAlbum(Album|null $album): self
     {
         $this->album = $album;
         return $this;
     }
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
-
-    public function setDescription(string $description): self
-    {
-        $this->description = $description;
-
-        return $this;
-    }
-
 }

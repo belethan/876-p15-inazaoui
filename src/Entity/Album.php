@@ -10,7 +10,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
-#[ORM\Table(name: 'album')]
 class Album
 {
     #[ORM\Id]
@@ -21,11 +20,8 @@ class Album
     #[ORM\Column(length: 255)]
     private string $name;
 
-    /**
-     * Propriétaire de l’album
-     */
     #[ORM\ManyToOne(inversedBy: 'albums')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $user = null;
 
     #[ORM\OneToMany(
@@ -54,15 +50,8 @@ class Album
     public function setName(string $name): self
     {
         $this->name = $name;
-
         return $this;
     }
-
-    /**
-     * ======================
-     * Relation avec User
-     * ======================
-     */
 
     public function getUser(): ?User
     {
@@ -72,15 +61,8 @@ class Album
     public function setUser(?User $user): self
     {
         $this->user = $user;
-
         return $this;
     }
-
-    /**
-     * ======================
-     * Relation avec Media
-     * ======================
-     */
 
     /** @return Collection<int, Media> */
     public function getMedia(): Collection
@@ -94,7 +76,6 @@ class Album
             $this->media->add($media);
             $media->setAlbum($this);
         }
-
         return $this;
     }
 
@@ -105,7 +86,6 @@ class Album
                 $media->setAlbum(null);
             }
         }
-
         return $this;
     }
 }

@@ -6,6 +6,7 @@ namespace App\Tests\Integration\Repository;
 
 use App\Entity\Album;
 use App\Repository\AlbumRepository;
+use App\Tests\Support\TestUserFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -30,15 +31,17 @@ class AlbumRepositoryTest extends KernelTestCase
         $platform = $conn->getDatabasePlatform();
 
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
-        $conn->executeStatement(
-            $platform->getTruncateTableSQL('album', true)
-        );
+        $conn->executeStatement($platform->getTruncateTableSQL('album', true));
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
     }
 
     public function testPersistAndFindAlbum(): void
     {
-        $album = (new Album())->setName('Album Test');
+        $user = TestUserFactory::getOrCreateIna($this->em);
+
+        $album = (new Album())
+            ->setName('Album Test')
+            ->setUser($user);
 
         $this->em->persist($album);
         $this->em->flush();
@@ -48,12 +51,15 @@ class AlbumRepositoryTest extends KernelTestCase
 
         self::assertNotNull($found);
         self::assertSame('Album Test', $found->getName());
+        self::assertSame($user->getId(), $found->getUser()->getId());
     }
 
     public function testFindAllReturnsArray(): void
     {
-        $album1 = (new Album())->setName('Album 1');
-        $album2 = (new Album())->setName('Album 2');
+        $user = TestUserFactory::getOrCreateIna($this->em);
+
+        $album1 = (new Album())->setName('Album 1')->setUser($user);
+        $album2 = (new Album())->setName('Album 2')->setUser($user);
 
         $this->em->persist($album1);
         $this->em->persist($album2);
@@ -67,7 +73,11 @@ class AlbumRepositoryTest extends KernelTestCase
 
     public function testCountAlbums(): void
     {
-        $album = (new Album())->setName('Album Count');
+        $user = TestUserFactory::getOrCreateIna($this->em);
+
+        $album = new Album()
+            ->setName('Album Count')
+            ->setUser($user);
 
         $this->em->persist($album);
         $this->em->flush();

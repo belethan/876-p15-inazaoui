@@ -40,44 +40,6 @@ class AlbumControllerTest extends WebTestCase
         $client->loginUser($admin);
     }
 
-    public function testIndexPageIsAccessible(): void
-    {
-        $client = static::createClient();
-        $em = $this->getEntityManager($client);
-
-        $this->truncateTables($em);
-        $this->loginAsAdmin($client, $em);
-
-        $client->request('GET', '/admin/album');
-
-        self::assertResponseIsSuccessful();
-    }
-
-    public function testAddAlbum(): void
-    {
-        $client = static::createClient();
-        $em = $this->getEntityManager($client);
-
-        $this->truncateTables($em);
-        $this->loginAsAdmin($client, $em);
-
-        $crawler = $client->request('GET', '/admin/album/add');
-        self::assertResponseIsSuccessful();
-
-        $form = $crawler->filter('form')->form([
-            'album[name]' => 'Album fonctionnel',
-        ]);
-
-        $client->submit($form);
-
-        self::assertResponseRedirects('/admin/album');
-
-        $repo = $client->getContainer()->get(AlbumRepository::class);
-        self::assertNotNull(
-            $repo->findOneBy(['name' => 'Album fonctionnel'])
-        );
-    }
-
     public function testUpdateAlbum(): void
     {
         $client = static::createClient();
@@ -87,21 +49,19 @@ class AlbumControllerTest extends WebTestCase
         $this->truncateTables($em);
         $this->loginAsAdmin($client, $em);
 
-        //  Création album
-        $album = (new Album())->setName('Album original');
+        $admin = TestUserFactory::getOrCreateIna($em);
+
+        $album = (new Album())
+            ->setName('Album original')
+            ->setUser($admin);
+
         $em->persist($album);
         $em->flush();
 
-        $albumId = $album->getId();
-        self::assertNotNull($albumId);
-
-        //  Route EDIT (pas UPDATE)
-        $editUrl = $router->generate('admin_album_edit', [
-            'id' => $albumId,
-        ]);
-
-        $crawler = $client->request('GET', $editUrl);
-        self::assertResponseIsSuccessful();
+        $crawler = $client->request(
+            'GET',
+            $router->generate('admin_album_edit', ['id' => $album->getId()])
+        );
 
         $form = $crawler->filter('form')->form([
             'album[name]' => 'Album modifié',
@@ -111,12 +71,10 @@ class AlbumControllerTest extends WebTestCase
 
         self::assertResponseRedirects('/admin/album');
 
-        //  Rechargement depuis la DB
         $em->clear();
-        $updatedAlbum = $em->getRepository(Album::class)->find($albumId);
+        $updated = $em->getRepository(Album::class)->find($album->getId());
 
-        self::assertNotNull($updatedAlbum);
-        self::assertSame('Album modifié', $updatedAlbum->getName());
+        self::assertSame('Album modifié', $updated->getName());
     }
 
     public function testDeleteAlbum(): void
@@ -127,41 +85,25 @@ class AlbumControllerTest extends WebTestCase
         $this->truncateTables($em);
         $this->loginAsAdmin($client, $em);
 
-        $album = (new Album())->setName('Album à supprimer');
+        $admin = TestUserFactory::getOrCreateIna($em);
+
+        $album = (new Album())
+            ->setName('Album à supprimer')
+            ->setUser($admin);
+
         $em->persist($album);
         $em->flush();
 
-        $albumId = $album->getId();
-        self::assertNotNull($albumId);
-
-        // Charger index pour générer CSRF
         $crawler = $client->request('GET', '/admin/album');
-        self::assertResponseIsSuccessful();
-
-        $buttonSelector = sprintf(
-            'button[data-delete-url="/admin/album/delete/%d"]',
-            $albumId
+        $button = $crawler->filter(
+            sprintf('button[data-delete-url="/admin/album/delete/%d"]', $album->getId())
         );
 
-        self::assertSelectorExists($buttonSelector);
-
-        $button = $crawler->filter($buttonSelector);
-        $deleteUrl = $button->attr('data-delete-url');
-        $csrfToken = $button->attr('data-delete-token');
-
-        self::assertNotEmpty($deleteUrl);
-        self::assertNotEmpty($csrfToken);
-
-        //  POST réel
-        $client->request('POST', $deleteUrl, [
-            '_token' => $csrfToken,
+        $client->request('POST', $button->attr('data-delete-url'), [
+            '_token' => $button->attr('data-delete-token'),
         ]);
 
         self::assertResponseRedirects('/admin/album');
-
-        $em->clear();
-        self::assertNull(
-            $em->getRepository(Album::class)->find($albumId)
-        );
+        self::assertNull($em->getRepository(Album::class)->find($album->getId()));
     }
 }

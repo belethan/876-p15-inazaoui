@@ -54,6 +54,7 @@ class MediaControllerTest extends WebTestCase
         $media = new Media();
         $media->setTitle('Test delete');
         $media->setPath('uploads/test.jpg');
+        $media->setDescription('Description test');
         $media->setUser($user);
 
         $em->persist($media);
