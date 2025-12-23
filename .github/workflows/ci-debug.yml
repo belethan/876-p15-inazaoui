@@ -1,4 +1,4 @@
-name: CI Symfony
+name: CI Symfony Debug & Coverage (MySQL)
 
 on:
   push:
@@ -6,14 +6,33 @@ on:
   workflow_dispatch:
 
 jobs:
-  quality:
+  debug:
+    name: PHPUnit + Coverage + PHPStan (MySQL)
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: inazaoui_test
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+        options: >-
+          --health-cmd="mysqladmin ping -h mysql -u root -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      APP_ENV: test
+      DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
+      - name: Setup PHP with Xdebug
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -24,7 +43,20 @@ jobs:
         run: composer validate --no-check-publish
 
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping -h mysql -u root -proot && break
+            sleep 2
+          done
+
+      - name: Prepare test database
+        run: |
+          php bin/console doctrine:database:drop --if-exists --force
+          php bin/console doctrine:database:create
+          php bin/console doctrine:schema:create
 
       - name: Run PHPUnit with coverage
         run: |
