@@ -28,9 +28,12 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+    env:
+      APP_ENV: test
+      DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install system dependencies
         run: |
@@ -40,8 +43,7 @@ jobs:
             default-mysql-client
 
       - name: Install PHP extensions
-        run: |
-          docker-php-ext-install pdo_mysql zip intl
+        run: docker-php-ext-install pdo_mysql intl zip
 
       - name: Install Composer
         run: |
@@ -49,30 +51,20 @@ jobs:
           php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
       - name: Install dependencies
-        run: |
-          composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            mysqladmin ping -h mysql -u root -proot && break
+            mysqladmin ping -h mysql -u test -ptest && break
             sleep 2
           done
 
-      - name: Prepare test database
-        env:
-          APP_ENV: test
-          DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
-        run: |
-          php bin/console doctrine:database:drop --if-exists --force
-          php bin/console doctrine:database:create --if-not-exists
-          php bin/console doctrine:schema:create
+      - name: Create schema (NO database creation)
+        run: php bin/console doctrine:schema:create
 
       - name: Run PHPUnit
-        env:
-          APP_ENV: test
-          DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
         run: php bin/phpunit
 
       - name: Run PHPStan
-        run: php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
