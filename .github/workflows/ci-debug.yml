@@ -24,11 +24,11 @@ jobs:
           --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -proot"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
     env:
       APP_ENV: test
-      DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui?serverVersion=8.0
+      DATABASE_URL: mysql://test:test@127.0.0.1:3306/inazaoui_test?serverVersion=8.0&charset=utf8mb4
 
     steps:
       - name: Checkout code
@@ -40,6 +40,7 @@ jobs:
           php-version: '8.4'
           coverage: xdebug
           extensions: mbstring, intl, pdo_mysql
+          tools: composer:v2
 
       - name: Validate composer.json
         run: composer validate --no-check-publish
@@ -49,15 +50,16 @@ jobs:
 
       - name: Wait for MySQL
         run: |
-          for i in {1..30}; do
-            mysqladmin ping -h 127.0.0.1 -u root -proot && break
+          for i in {1..60}; do
+            mysqladmin ping -h 127.0.0.1 -u root -proot && exit 0
             sleep 2
           done
+          echo "MySQL did not become ready in time" >&2
+          exit 1
 
-      - name: Prepare test database
+      - name: Prepare test schema
         run: |
-          php bin/console doctrine:database:drop --if-exists --force
-          php bin/console doctrine:database:create
+          php bin/console doctrine:schema:drop --force --full-database
           php bin/console doctrine:schema:create
 
       - name: Run PHPUnit with coverage
