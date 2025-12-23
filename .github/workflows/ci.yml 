@@ -11,7 +11,6 @@ jobs:
     name: Quality checks (MySQL)
     runs-on: ubuntu-latest
 
-    # PHP dans un conteneur Docker
     container:
       image: php:8.4-cli
 
@@ -67,11 +66,11 @@ jobs:
       - name: Prepare test database
         run: |
           php bin/console doctrine:database:drop --if-exists --force
-          php bin/console doctrine:database:create
+          php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
 
       - name: Run PHPUnit
         run: php bin/phpunit
 
       - name: Run PHPStan
-        run: vendor/bin/phpstan analyse --no-progress
+        run: php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress

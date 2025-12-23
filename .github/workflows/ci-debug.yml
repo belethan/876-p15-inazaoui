@@ -73,4 +73,4 @@ jobs:
           path: coverage.xml
 
       - name: Run PHPStan
-        run: vendor/bin/phpstan analyse --no-progress
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G
