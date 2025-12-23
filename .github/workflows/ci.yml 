@@ -28,10 +28,6 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
-    env:
-      APP_ENV: test
-      DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,12 +60,18 @@ jobs:
           done
 
       - name: Prepare test database
+        env:
+          APP_ENV: test
+          DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
         run: |
           php bin/console doctrine:database:drop --if-exists --force
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
 
       - name: Run PHPUnit
+        env:
+          APP_ENV: test
+          DATABASE_URL: mysql://test:test@mysql:3306/inazaoui_test?serverVersion=8.0
         run: php bin/phpunit
 
       - name: Run PHPStan
