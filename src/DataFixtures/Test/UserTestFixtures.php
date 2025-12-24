@@ -12,13 +12,14 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 class UserTestFixtures extends Fixture
 {
     /**
-     * Référence utilisée dans les tests
+     * Référence utilisée dans les tests.
      */
     public const INA_USER = 'user_test_admin';
 
     public function __construct(
-        private UserPasswordHasherInterface $hasher
-    ) {}
+        private UserPasswordHasherInterface $hasher,
+    ) {
+    }
 
     public function load(ObjectManager $manager): void
     {

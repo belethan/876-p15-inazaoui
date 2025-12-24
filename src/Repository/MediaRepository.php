@@ -19,15 +19,16 @@ class MediaRepository extends ServiceEntityRepository
     }
 
     /**
-     * Médias visibles (utilisateur actif uniquement)
+     * Médias visibles (utilisateur actif uniquement).
      *
      * @param array<string, mixed> $criteria
+     *
      * @return list<Media>
      */
     public function findVisibleMedias(
         array $criteria = [],
         ?int $limit = null,
-        ?int $offset = null
+        ?int $offset = null,
     ): array {
         $qb = $this->createQueryBuilder('m')
             ->innerJoin('m.user', 'u')
@@ -40,11 +41,11 @@ class MediaRepository extends ServiceEntityRepository
                 ->setParameter($field, $value);
         }
 
-        if ($limit !== null) {
+        if (null !== $limit) {
             $qb->setMaxResults($limit);
         }
 
-        if ($offset !== null) {
+        if (null !== $offset) {
             $qb->setFirstResult($offset);
         }
 
@@ -55,7 +56,7 @@ class MediaRepository extends ServiceEntityRepository
     }
 
     /**
-     * Compteur de médias visibles
+     * Compteur de médias visibles.
      *
      * @param array<string, mixed> $criteria
      */

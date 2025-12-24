@@ -51,4 +51,3 @@ class AlbumTest extends TestCase
         $this->assertNull($media->getAlbum());
     }
 }
-

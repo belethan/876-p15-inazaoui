@@ -10,8 +10,8 @@ use App\Entity\User;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
@@ -52,7 +52,7 @@ class MediaType extends AbstractType
             ]);
 
         // Champs réservés à l’admin
-        if ($options['is_admin'] === true) {
+        if (true === $options['is_admin']) {
             $builder
                 ->add('user', EntityType::class, [
                     'label' => 'Utilisateur',

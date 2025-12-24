@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller\Admin;
 
 use App\Entity\Album;
@@ -59,8 +61,8 @@ class AlbumController extends AbstractController
         }
 
         return $this->render('admin/album/form.html.twig', [
-            'form'   => $form->createView(),
-            'album'  => $album,
+            'form' => $form->createView(),
+            'album' => $album,
             'isEdit' => false,
         ]);
     }
@@ -87,8 +89,8 @@ class AlbumController extends AbstractController
         }
 
         return $this->render('admin/album/form.html.twig', [
-            'form'   => $form->createView(),
-            'album'  => $album,
+            'form' => $form->createView(),
+            'album' => $album,
             'isEdit' => true,
         ]);
     }
@@ -97,13 +99,14 @@ class AlbumController extends AbstractController
     public function delete(Album $album, Request $request, EntityManagerInterface $em): Response
     {
         if (
-            ($this->getParameter('kernel.environment') !== 'test')
+            ('test' !== $this->getParameter('kernel.environment'))
             && !$this->isCsrfTokenValid(
-                'delete_album_' . $album->getId(),
+                'delete_album_'.$album->getId(),
                 $request->request->get('_token')
             )
         ) {
             $this->addFlash('danger', 'Jeton CSRF invalide.');
+
             return $this->redirectToRoute('admin_album_index');
         }
 
@@ -112,6 +115,7 @@ class AlbumController extends AbstractController
             && $album->getUser() !== $this->getUser()
         ) {
             $this->addFlash('danger', 'Vous n’êtes pas autorisé à supprimer cet album.');
+
             return $this->redirectToRoute('admin_album_index');
         }
 

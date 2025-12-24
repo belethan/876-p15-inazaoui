@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Functional\Admin;
 
 use App\Entity\User;
@@ -19,7 +21,7 @@ class UserAjaxTest extends WebTestCase
 
         // On crée un invité actif pour vérifier le rendu "Actif"
         $guest = new User();
-        $guest->setEmail('guest_' . uniqid('', true) . '@test.fr');
+        $guest->setEmail('guest_'.uniqid('', true).'@test.fr');
         $guest->setRoles(['ROLE_GUEST']);
         $guest->setPassword('test');
         $guest->setUserActif(true);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Functional\Security;
 
 use App\Entity\User;
@@ -63,7 +65,7 @@ class LoginSuccessHandlerTest extends WebTestCase
         $router = $container->get(RouterInterface::class);
 
         $guest = new User();
-        $guest->setEmail('guest_' . uniqid('', true) . '@test.fr');
+        $guest->setEmail('guest_'.uniqid('', true).'@test.fr');
         $guest->setPassword('test');
         $guest->setRoles(['ROLE_GUEST']);
         $guest->setUserActif(true);

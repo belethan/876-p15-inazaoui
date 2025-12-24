@@ -14,69 +14,87 @@ class Media
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private int|null $id = null;
+    private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    private string|null $path = null;
+    private ?string $path = null;
 
     #[ORM\Column(length: 255)]
     private string $title;
 
     #[ORM\Column(length: 255, nullable: true)]
-    private string|null $description = null;
+    private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'medias')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private User|null $user = null;
+    private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'media')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
-    private Album|null $album = null;
+    private ?Album $album = null;
 
-    public function getId(): int|null
-    { return $this->id; }
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
 
-    public function getPath(): string|null
-    { return $this->path; }
+    public function getPath(): ?string
+    {
+        return $this->path;
+    }
 
-    public function setPath(string|null $path): self
+    public function setPath(?string $path): self
     {
         $this->path = $path;
+
         return $this;
     }
 
-    public function getTitle(): string { return $this->title; }
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
 
     public function setTitle(string $title): self
     {
         $this->title = $title;
+
         return $this;
     }
 
-    public function getDescription(): string|null
-    { return $this->description; }
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
 
-    public function setDescription(string|null $description): self
+    public function setDescription(?string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
-    public function getUser(): User|null
-    { return $this->user; }
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
 
-    public function setUser(User|null $user): self
+    public function setUser(?User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
 
-    public function getAlbum(): Album|null
-    { return $this->album; }
+    public function getAlbum(): ?Album
+    {
+        return $this->album;
+    }
 
-    public function setAlbum(Album|null $album): self
+    public function setAlbum(?Album $album): self
     {
         $this->album = $album;
+
         return $this;
     }
 }

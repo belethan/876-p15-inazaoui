@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Repository\AlbumRepository;
@@ -11,16 +13,16 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class HomeController extends AbstractController
 {
-    #[Route("/", name: "home")]
+    #[Route('/', name: 'home')]
     public function home(): Response
     {
         return $this->render('front/home.html.twig');
     }
 
     /**
-     * Liste des invités (utilisateurs actifs uniquement)
+     * Liste des invités (utilisateurs actifs uniquement).
      */
-    #[Route("/guests", name: "guests")]
+    #[Route('/guests', name: 'guests')]
     public function guests(UserRepository $userRepository): Response
     {
         $guests = $userRepository->findAllGuests(); // déjà filtré userActif = true
@@ -29,12 +31,12 @@ class HomeController extends AbstractController
     }
 
     /**
-     * Détail d’un invité actif
+     * Détail d’un invité actif.
      */
-    #[Route("/guest/{id}", name: "guest")]
+    #[Route('/guest/{id}', name: 'guest')]
     public function guest(
         int $id,
-        UserRepository $userRepository
+        UserRepository $userRepository,
     ): Response {
         $guest = $userRepository->find($id);
 
@@ -48,14 +50,14 @@ class HomeController extends AbstractController
 
     /**
      * Portfolio / Albums
-     * médias d’utilisateurs actifs uniquement
+     * médias d’utilisateurs actifs uniquement.
      */
-    #[Route("/portfolio/{id?}", name: "portfolio")]
+    #[Route('/portfolio/{id?}', name: 'portfolio')]
     public function portfolio(
         AlbumRepository $albumRepository,
         MediaRepository $mediaRepository,
         UserRepository $userRepository,
-        int|null $id = null
+        ?int $id = null,
     ): Response {
         // Albums avec médias visibles uniquement
         $albums = $albumRepository->findAlbumsWithVisibleMedias();
@@ -83,7 +85,7 @@ class HomeController extends AbstractController
         return $this->render('front/portfolio.html.twig', compact('albums', 'album', 'medias'));
     }
 
-    #[Route("/about", name: "about")]
+    #[Route('/about', name: 'about')]
     public function about(): Response
     {
         return $this->render('front/about.html.twig');

@@ -7,13 +7,13 @@ namespace App\DataFixtures;
 use App\Entity\Album;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\Persistence\ObjectManager;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
+use Doctrine\Persistence\ObjectManager;
 
 class AlbumFixtures extends Fixture implements DependentFixtureInterface
 {
     /**
-     * Groupe "album"
+     * Groupe "album".
      */
     public static function getGroups(): array
     {
@@ -23,11 +23,11 @@ class AlbumFixtures extends Fixture implements DependentFixtureInterface
     public function load(ObjectManager $manager): void
     {
         /** @var User $user */
-        $user = $this->getReference(UserFixtures::REF_USER_ADMIN,User::class);
+        $user = $this->getReference(UserFixtures::REF_USER_ADMIN, User::class);
 
-        for ($i = 1; $i <= 50; $i++) {
+        for ($i = 1; $i <= 50; ++$i) {
             $album = new Album();
-            $album->setName('Album ' . $i);
+            $album->setName('Album '.$i);
             $album->setUser($user);
 
             $manager->persist($album);
@@ -37,7 +37,7 @@ class AlbumFixtures extends Fixture implements DependentFixtureInterface
     }
 
     /**
-     * Force l’exécution de UserFixtures AVANT
+     * Force l’exécution de UserFixtures AVANT.
      */
     public function getDependencies(): array
     {

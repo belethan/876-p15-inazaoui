@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Security;
 
-use SensitiveParameter;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
@@ -12,12 +13,13 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerI
 readonly class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
     public function __construct(
-        private RouterInterface $router
-    ) {}
+        private RouterInterface $router,
+    ) {
+    }
 
     public function onAuthenticationSuccess(
         Request $request,
-        #[SensitiveParameter] TokenInterface $token
+        #[\SensitiveParameter] TokenInterface $token,
     ): RedirectResponse {
         $user = $token->getUser();
 
@@ -32,4 +34,3 @@ readonly class LoginSuccessHandler implements AuthenticationSuccessHandlerInterf
         );
     }
 }
-

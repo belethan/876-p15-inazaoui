@@ -1,20 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Functional\Security;
 
 use App\Entity\User;
-use SensitiveParameter;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class LoginTest extends WebTestCase
 {
     private function createUser(
-        #[SensitiveParameter] string                      $email,
-        #[SensitiveParameter] string                      $plainPassword,
-        array                                             $roles,
-        bool                                              $actif,
-        #[SensitiveParameter] UserPasswordHasherInterface $passwordHasher
+        #[\SensitiveParameter] string $email,
+        #[\SensitiveParameter] string $plainPassword,
+        array $roles,
+        bool $actif,
+        #[\SensitiveParameter] UserPasswordHasherInterface $passwordHasher,
     ): void {
         $em = static::getContainer()->get('doctrine')->getManager();
 
@@ -50,7 +51,7 @@ class LoginTest extends WebTestCase
         $passwordHasher = static::getContainer()
             ->get(UserPasswordHasherInterface::class);
 
-        $email = 'user_' . uniqid('', true) . '@test.com';
+        $email = 'user_'.uniqid('', true).'@test.com';
 
         $this->createUser(
             $email,
@@ -63,13 +64,13 @@ class LoginTest extends WebTestCase
         $crawler = $client->request('GET', '/login');
 
         $form = $crawler->selectButton('Connexion')->form([
-            'email'    => $email,
+            'email' => $email,
             'password' => 'password123',
         ]);
 
         $client->submit($form);
 
-        //login réussi = redirection
+        // login réussi = redirection
         self::assertResponseRedirects();
     }
 
@@ -80,7 +81,7 @@ class LoginTest extends WebTestCase
         $passwordHasher = static::getContainer()
             ->get(UserPasswordHasherInterface::class);
 
-        $email = 'inactive_' . uniqid('', true) . '@test.com';
+        $email = 'inactive_'.uniqid('', true).'@test.com';
 
         $this->createUser(
             $email,
@@ -93,7 +94,7 @@ class LoginTest extends WebTestCase
         $crawler = $client->request('GET', '/login');
 
         $form = $crawler->selectButton('Connexion')->form([
-            'email'    => $email,
+            'email' => $email,
             'password' => 'password123',
         ]);
 
@@ -102,6 +103,4 @@ class LoginTest extends WebTestCase
         //  login refusé = redirection (Symfony)
         self::assertResponseRedirects();
     }
-
-
 }

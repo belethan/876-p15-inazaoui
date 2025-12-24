@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Controller;
 
 use App\Entity\Album;
-use App\Repository\AlbumRepository;
 use App\Tests\Support\TestUserFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;

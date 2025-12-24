@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Functional\Security;
 
 use App\Entity\User;
@@ -15,7 +17,7 @@ class AdminAccessTest extends WebTestCase
 
         // 🔑 Utilisateur non admin avec email UNIQUE
         $user = new User();
-        $user->setEmail('user_' . uniqid() . '@test.com');
+        $user->setEmail('user_'.uniqid().'@test.com');
         $user->setRoles(['ROLE_USER']);
         $user->setPassword('test'); // valeur factice suffisante pour la DB
 

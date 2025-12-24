@@ -50,6 +50,7 @@ class Album
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -61,6 +62,7 @@ class Album
     public function setUser(?User $user): self
     {
         $this->user = $user;
+
         return $this;
     }
 
@@ -76,6 +78,7 @@ class Album
             $this->media->add($media);
             $media->setAlbum($this);
         }
+
         return $this;
     }
 
@@ -86,6 +89,7 @@ class Album
                 $media->setAlbum(null);
             }
         }
+
         return $this;
     }
 }

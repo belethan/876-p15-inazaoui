@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Form;
 
 use App\Entity\Album;
@@ -13,7 +15,7 @@ class AlbumType extends AbstractType
 {
     public function buildForm(
         FormBuilderInterface $builder,
-        array $options
+        array $options,
     ): void {
         $builder
             ->add('name', TextType::class, [
@@ -28,7 +30,7 @@ class AlbumType extends AbstractType
     }
 
     public function configureOptions(
-        OptionsResolver $resolver
+        OptionsResolver $resolver,
     ): void {
         $resolver->setDefaults([
             'data_class' => Album::class,

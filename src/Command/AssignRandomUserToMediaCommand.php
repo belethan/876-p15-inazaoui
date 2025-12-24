@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Command;
 
 use App\Entity\Media;
@@ -33,10 +35,11 @@ class AssignRandomUserToMediaCommand extends Command
 
         if (empty($users)) {
             $io->error('Aucun utilisateur entre ID 2 et 101 trouvé.');
+
             return Command::FAILURE;
         }
 
-        $io->success(count($users) . ' utilisateurs disponibles.');
+        $io->success(count($users).' utilisateurs disponibles.');
 
         // Récupérer tous les médias existants
         $medias = $this->em->getRepository(Media::class)->findAll();
@@ -44,8 +47,9 @@ class AssignRandomUserToMediaCommand extends Command
 
         $io->section("Médias trouvés : $total");
 
-        if ($total === 0) {
+        if (0 === $total) {
             $io->warning('Aucun média trouvé.');
+
             return Command::SUCCESS;
         }
 
@@ -66,7 +70,7 @@ class AssignRandomUserToMediaCommand extends Command
         $this->em->flush();
         $io->progressFinish();
 
-        $io->success("Tous les médias ont reçu un user_id aléatoire (entre 2 et 101).");
+        $io->success('Tous les médias ont reçu un user_id aléatoire (entre 2 et 101).');
 
         return Command::SUCCESS;
     }

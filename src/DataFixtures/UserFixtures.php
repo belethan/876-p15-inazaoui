@@ -28,7 +28,7 @@ class UserFixtures extends Fixture
         /**
          * =========================
          * UTILISATEUR ADMIN OBLIGATOIRE
-         * =========================
+         * =========================.
          */
         $admin = new User();
         $admin->setEmail('ina@free.fr');
@@ -45,18 +45,18 @@ class UserFixtures extends Fixture
         //  Référence utilisée par AlbumFixtures
         $this->addReference(self::REF_USER_ADMIN, $admin);
 
-        /**
+        /*
          * =========================
          * UTILISATEURS STANDARD (ID 2 → 101)
          * =========================
          */
-        for ($i = 2; $i <= 101; $i++) {
+        for ($i = 2; $i <= 101; ++$i) {
             $user = new User();
 
             $prenom = $faker->firstName;
             $nom = $faker->lastName;
 
-            $email = strtolower($prenom . '.' . $nom . $i . '@example.com');
+            $email = strtolower($prenom.'.'.$nom.$i.'@example.com');
 
             $user->setEmail($email);
             $user->setRoles(['ROLE_USER']);
@@ -77,5 +77,4 @@ class UserFixtures extends Fixture
     {
         return ['app'];
     }
-
 }

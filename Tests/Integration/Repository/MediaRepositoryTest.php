@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Integration\Repository;
 
 use App\Entity\Media;
@@ -28,7 +30,7 @@ class MediaRepositoryTest extends KernelTestCase
 
         // User de test
         $user = new User();
-        $user->setEmail('repo_' . uniqid('', true) . '@test.com');
+        $user->setEmail('repo_'.uniqid('', true).'@test.com');
         $user->setRoles(['ROLE_USER']);
         $user->setUserActif(true);
         $user->setPassword(

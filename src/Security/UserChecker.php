@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Security;
 
 use App\Entity\User;
@@ -17,9 +19,7 @@ class UserChecker implements UserCheckerInterface
 
         // Si le user est désactivé, on bloque la connexion
         if (!$user->isUserActif()) {
-            throw new CustomUserMessageAccountStatusException(
-                'Votre compte a été désactivé. Veuillez contacter l’administrateur.'
-            );
+            throw new CustomUserMessageAccountStatusException('Votre compte a été désactivé. Veuillez contacter l’administrateur.');
         }
     }
 
@@ -28,4 +28,3 @@ class UserChecker implements UserCheckerInterface
         // Rien de spécifique après auth pour le moment
     }
 }
-

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -32,20 +34,22 @@ class OptimizeImagesCommand extends Command
         // Récupération du projectDir via le container
         $projectDir = $this->getApplication()->getKernel()->getProjectDir();
 
-        $defaultDirectory = $projectDir . '/public/uploads';
+        $defaultDirectory = $projectDir.'/public/uploads';
         $directory = $input->getArgument('directory') ?? $defaultDirectory;
 
         if (!is_dir($directory)) {
             $io->error("Le dossier source n'existe pas : $directory");
+
             return Command::FAILURE;
         }
 
         $io->title("Optimisation des images dans : $directory");
 
-        $images = glob($directory . '/*.{jpg,jpeg,png,webp}', GLOB_BRACE);
+        $images = glob($directory.'/*.{jpg,jpeg,png,webp}', GLOB_BRACE);
 
         if (empty($images)) {
             $io->warning('Aucune image trouvée.');
+
             return Command::SUCCESS;
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DataFixtures;
 
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -7,7 +9,6 @@ use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
-use RuntimeException;
 
 final class MediaDescriptionUpdateFixtures extends Fixture implements FixtureGroupInterface
 {
@@ -16,9 +17,7 @@ final class MediaDescriptionUpdateFixtures extends Fixture implements FixtureGro
         // FixturesBundle fournit bien un EntityManager,
         // mais PHPStan exige une vérification explicite
         if (!$manager instanceof EntityManagerInterface) {
-            throw new RuntimeException(
-                'Expected EntityManagerInterface, got ' . get_class($manager)
-            );
+            throw new \RuntimeException('Expected EntityManagerInterface, got '.get_class($manager));
         }
 
         $faker = Factory::create('fr_FR');

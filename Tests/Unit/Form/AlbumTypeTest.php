@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Unit\Form;
 
 use App\Entity\Album;
 use App\Form\AlbumType;
+use Symfony\Component\Form\Extension\Validator\ValidatorExtension;
 use Symfony\Component\Form\Test\TypeTestCase;
 use Symfony\Component\Validator\Validation;
-use Symfony\Component\Form\Extension\Validator\ValidatorExtension;
 
 class AlbumTypeTest extends TypeTestCase
 {

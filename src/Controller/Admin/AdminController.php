@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller\Admin;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,4 +19,3 @@ class AdminController extends AbstractController
         return $this->render('admin.html.twig');
     }
 }
-

@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Functional\Controller;
 
 use App\Entity\Media;
 use App\Tests\Support\TestUserFactory;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class MediaControllerTest extends WebTestCase
 {
@@ -70,18 +72,17 @@ class MediaControllerTest extends WebTestCase
         // 2️⃣ Appel POST réel (sans CSRF en env=test)
         $client->request(
             'POST',
-            '/admin/media/delete/' . $mediaId
+            '/admin/media/delete/'.$mediaId
         );
 
         // 3️⃣ Redirection attendue
-         self::assertResponseRedirects('/admin/media');
+        self::assertResponseRedirects('/admin/media');
         $em->clear();
         self::assertNull(
             $em->getRepository(Media::class)->find($media->getId())
         );
 
-        //self::assertResponseIsSuccessful();
-
+        // self::assertResponseIsSuccessful();
 
         // 4️⃣ Vérification suppression
         $em->clear();

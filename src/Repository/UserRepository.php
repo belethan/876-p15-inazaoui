@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\User;
@@ -29,11 +31,10 @@ class UserRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-
     /**
      * Retourne l’administratrice (Ina).
      */
-    public function findAdmin(): User|null
+    public function findAdmin(): ?User
     {
         foreach ($this->findAll() as $user) {
             if (in_array('ROLE_ADMIN', $user->getRoles(), true)) {
@@ -56,5 +57,4 @@ class UserRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
-
 }

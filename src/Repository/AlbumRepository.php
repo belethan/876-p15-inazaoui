@@ -16,7 +16,7 @@ class AlbumRepository extends ServiceEntityRepository
     }
 
     /**
-     * Albums avec leur propriétaire et leurs médias
+     * Albums avec leur propriétaire et leurs médias.
      */
     public function findAllWithMediaAndUser(): array
     {
@@ -31,7 +31,7 @@ class AlbumRepository extends ServiceEntityRepository
     }
 
     /**
-     * Albums d’un utilisateur donné
+     * Albums d’un utilisateur donné.
      */
     public function findByUser(int $userId): array
     {
@@ -44,7 +44,7 @@ class AlbumRepository extends ServiceEntityRepository
     }
 
     /**
-     * Albums avec médias visibles (ex : utilisateur actif)
+     * Albums avec médias visibles (ex : utilisateur actif).
      */
     public function findAlbumsWithVisibleMedias(): array
     {
