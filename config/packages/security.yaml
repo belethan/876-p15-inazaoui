@@ -11,21 +11,25 @@ security:
 
   firewalls:
 
-    # FIREWALL DEV — DOIT AVOIR UN PATTERN
+    # =========================
+    # FIREWALL DEV
+    # =========================
     dev:
       pattern: ^/(_(profiler|wdt)|css|images|js)/
       security: false
 
+    # =========================
     # FIREWALL PRINCIPAL
+    # =========================
     main:
+      pattern: ^/
       provider: app_user_provider
       lazy: true
       stateless: false
-      # user_checker: App\Security\UserChecker  # à réactiver plus tard
 
       form_login:
-        login_path: login        # nom de route (GET)
-        check_path: /login       # chemin HTTP (POST)
+        login_path: login
+        check_path: /login
         username_parameter: email
         password_parameter: password
         enable_csrf: true
@@ -35,16 +39,27 @@ security:
         path: logout
         target: home
 
+  # =========================
+  # HIÉRARCHIE DES RÔLES
+  # =========================
   role_hierarchy:
     ROLE_ADMIN: ROLE_USER
 
+  # =========================
+  # CONTRÔLE D’ACCÈS
+  # =========================
   access_control:
-    # Pages publiques
+
+    # ---------- Pages publiques ----------
     - { path: ^/$, roles: PUBLIC_ACCESS }
     - { path: ^/(guests|portfolio|about)$, roles: PUBLIC_ACCESS }
     - { path: ^/login$, roles: PUBLIC_ACCESS }
     - { path: ^/register, roles: PUBLIC_ACCESS }
 
-    # Administration
-    - { path: ^/admin, roles: ROLE_ADMIN }
+    # ---------- Médias ----------
+    # ROLE_USER et ROLE_ADMIN → accès à la gestion des médias
+    - { path: ^/admin/media(/.*)?$, roles: ROLE_USER }
 
+    # ---------- Administration ----------
+    # Le reste de /admin est STRICTEMENT réservé aux ADMIN
+    - { path: ^/admin(/.*)?$, roles: ROLE_ADMIN }

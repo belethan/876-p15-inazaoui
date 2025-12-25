@@ -10,10 +10,11 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin')]
-#[IsGranted('ROLE_ADMIN')]
+#[IsGranted('ROLE_USER')]
 class AdminController extends AbstractController
 {
-    #[Route('', name: 'admin_dashboard')]
+    #[Route('', name: 'admin_dashboard', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function dashboard(): Response
     {
         return $this->render('admin.html.twig');

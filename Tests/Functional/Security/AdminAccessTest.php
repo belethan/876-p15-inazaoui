@@ -10,28 +10,48 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class AdminAccessTest extends WebTestCase
 {
-    public function testAdminAccessIsDeniedForUser(): void
+    public function testUserCanAccessMediaAdmin(): void
     {
         $client = static::createClient();
         $em = static::getContainer()->get('doctrine')->getManager();
 
-        // 🔑 Utilisateur non admin avec email UNIQUE
+        // 🔑 Utilisateur ROLE_USER
         $user = new User();
-        $user->setEmail('user_'.uniqid().'@test.com');
+        $user->setEmail('user_' . uniqid('', true) . '@test.com');
         $user->setRoles(['ROLE_USER']);
-        $user->setPassword('test'); // valeur factice suffisante pour la DB
+        $user->setPassword('test');
 
         $em->persist($user);
         $em->flush();
 
-        // Authentification
         $client->loginUser($user);
 
-        // Tentative d’accès à une route admin
+        // ROLE_USER → accès AUTORISÉ à /admin/media
         $client->request('GET', '/admin/media');
 
-        // Accès refusé (utilisateur connecté mais sans rôle)
-        $this->assertResponseStatusCodeSame(403);
+        $this->assertResponseIsSuccessful();
+    }
+
+    public function testUserIsDeniedForAdminArea(): void
+    {
+        $client = static::createClient();
+        $em = static::getContainer()->get('doctrine')->getManager();
+
+        // 🔑 Utilisateur ROLE_USER
+        $user = new User();
+        $user->setEmail('user_' . uniqid('', true) . '@test.com');
+        $user->setRoles(['ROLE_USER']);
+        $user->setPassword('test');
+
+        $em->persist($user);
+        $em->flush();
+
+        $client->loginUser($user);
+
+        // ROLE_USER → accès INTERDIT au reste de l’admin
+        $client->request('GET', '/admin');
+
+        self::assertResponseStatusCodeSame(403);
     }
 
     public function testAdminAccessIsGrantedForAdmin(): void
@@ -39,15 +59,14 @@ class AdminAccessTest extends WebTestCase
         $client = static::createClient();
         $em = static::getContainer()->get('doctrine')->getManager();
 
-        // 🔑 Récupère ou crée Ina (ROLE_ADMIN)
+        // 🔑 Admin (Ina)
         $admin = TestUserFactory::getOrCreateIna($em);
 
-        // Authentification admin
         $client->loginUser($admin);
 
-        // Accès à la route admin
+        // ROLE_ADMIN → accès autorisé
         $client->request('GET', '/admin/media');
 
-        $this->assertResponseIsSuccessful();
+        self::assertResponseIsSuccessful();
     }
 }
