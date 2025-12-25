@@ -34,7 +34,7 @@ class MediaController extends AbstractController
 
         $criteria = [];
 
-        // Règle cadrage : invité => uniquement ses médias
+        // Invité → uniquement ses médias
         if (!$this->isGranted('ROLE_ADMIN')) {
             $criteria['user'] = $user;
         }
@@ -76,7 +76,7 @@ class MediaController extends AbstractController
                 return $this->redirectToRoute('admin_media_index');
             }
 
-            // Règle cadrage : ROLE_USER => forcer l’utilisateur connecté
+            // ROLE_USER → utilisateur forcé
             if (!$this->isGranted('ROLE_ADMIN')) {
                 $media->setUser($user);
             } elseif (null === $media->getUser()) {
@@ -114,7 +114,7 @@ class MediaController extends AbstractController
     #[Route('/admin/media/edit/{id}', name: 'admin_media_edit', methods: ['GET', 'POST'])]
     public function edit(Media $media, Request $request, EntityManagerInterface $em): Response
     {
-        // Règle cadrage : un invité ne modifie que ses médias
+        // Un invité ne peut modifier que ses médias
         if (
             !$this->isGranted('ROLE_ADMIN')
             && $media->getUser() !== $this->getUser()
@@ -202,13 +202,23 @@ class MediaController extends AbstractController
     private function compressImage(string $source, string $destination, int $quality = 85): void
     {
         $info = getimagesize($source);
-        if (!$info || !isset($info['mime'])) {
+        if ($info === false) {
             throw new RuntimeException('Fichier image invalide.');
         }
 
-        match ($info['mime']) {
-            'image/jpeg' => imagejpeg(imagecreatefromjpeg($source), $destination, $quality),
-            'image/png' => imagepng(imagecreatefrompng($source), $destination, 6),
+        $mime = $info['mime'];
+
+        match ($mime) {
+            'image/jpeg' => imagejpeg(
+                imagecreatefromjpeg($source),
+                $destination,
+                $quality
+            ),
+            'image/png' => imagepng(
+                imagecreatefrompng($source),
+                $destination,
+                6
+            ),
             default => throw new RuntimeException('Format image non supporté'),
         };
     }
