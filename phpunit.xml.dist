@@ -21,6 +21,19 @@
     </testsuites>
 
     <!-- ===================== -->
+    <!-- Coverage configuration -->
+    <!-- ===================== -->
+    <coverage>
+        <report>
+            <!-- Rapport HTML lisible (à déposer dans le repo) -->
+            <html outputDirectory="public/coverage"/>
+
+            <!-- Rapport XML (analyse fine, CI, justification) -->
+            <clover outputFile="public/coverage/coverage.xml"/>
+        </report>
+    </coverage>
+
+    <!-- ===================== -->
     <!-- Source (Coverage)     -->
     <!-- ===================== -->
     <source>
@@ -28,6 +41,12 @@
             <directory suffix=".php">src</directory>
         </include>
 
+        <!--
+            Exclusions JUSTIFIÉES :
+            - Code framework / technique
+            - Code non métier
+            - Code généré ou non testable unitairement
+        -->
         <exclude>
             <directory>src/Controller</directory>
             <directory>src/Command</directory>
@@ -47,7 +66,7 @@
         <env name="KERNEL_CLASS" value="App\Kernel"/>
         <env name="SHELL_VERBOSITY" value="-1"/>
 
-        <!-- Désactivation des dépréciations -->
+        <!-- Désactivation des dépréciations (migration SF 7.4) -->
         <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
 
         <!-- Doctrine : base STRICTEMENT dédiée aux tests -->

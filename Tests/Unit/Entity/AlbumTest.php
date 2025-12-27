@@ -50,4 +50,24 @@ class AlbumTest extends TestCase
         $this->assertCount(0, $album->getMedia());
         $this->assertNull($media->getAlbum());
     }
+
+    public function testAlbumNameAndMediaManagement(): void
+    {
+        $album = new Album();
+        $media = new Media();
+
+        // Test du setter / getter name
+        $album->setName('Vacances 2024');
+        $this->assertSame('Vacances 2024', $album->getName());
+
+        // Test relation addMedia
+        $album->addMedia($media);
+        $this->assertCount(1, $album->getMedia());
+        $this->assertSame($album, $media->getAlbum());
+
+        // Test relation removeMedia
+        $album->removeMedia($media);
+        $this->assertCount(0, $album->getMedia());
+        $this->assertNull($media->getAlbum());
+    }
 }

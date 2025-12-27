@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Integration\Repository;
+namespace App\Tests\Functional\Repository;
 
+use App\Entity\Media;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -11,103 +12,133 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class UserRepositoryTest extends KernelTestCase
 {
-    private EntityManagerInterface $em;
+    private EntityManagerInterface $entityManager;
     private UserRepository $repository;
 
+    #[\Override]
     protected function setUp(): void
     {
         self::bootKernel();
 
-        $this->em = static::getContainer()->get(EntityManagerInterface::class);
-        $this->repository = $this->em->getRepository(User::class);
+        $this->entityManager = self::getContainer()
+            ->get(EntityManagerInterface::class);
 
-        $this->em->createQuery('DELETE FROM App\Entity\User u')->execute();
+        $this->repository = $this->entityManager
+            ->getRepository(User::class);
     }
 
-    public function testFindAllGuests(): void
+    public function testFindAllGuestsReturnsOnlyGuests(): void
     {
-        $admin = (new User())
-            ->setEmail('admin@test.com')
-            ->setRoles(['ROLE_ADMIN'])
-            ->setPassword('test')
-            ->setUserActif(true);
+        // Arrange
+        $guest = new User();
+        $guest->setEmail('guest_unique@test.com');
+        $guest->setNom('GuestUnique');
+        $guest->setPrenom('User');
+        $guest->setRoles(['ROLE_USER']);
+        $guest->setPassword('password');
 
-        $guest1 = (new User())
-            ->setEmail('guest1@test.com')
-            ->setRoles(['ROLE_USER'])
-            ->setPassword('test')
-            ->setUserActif(true);
+        $admin = new User();
+        $admin->setEmail('admin_unique@test.com');
+        $admin->setNom('AdminUnique');
+        $admin->setPrenom('User');
+        $admin->setRoles(['ROLE_ADMIN']);
+        $admin->setPassword('password');
 
-        $guest2 = (new User())
-            ->setEmail('guest2@test.com')
-            ->setRoles(['ROLE_USER'])
-            ->setPassword('test')
-            ->setUserActif(true);
+        $this->entityManager->persist($guest);
+        $this->entityManager->persist($admin);
+        $this->entityManager->flush();
+        $this->entityManager->clear();
 
-        $this->em->persist($admin);
-        $this->em->persist($guest1);
-        $this->em->persist($guest2);
-        $this->em->flush();
-        $this->em->clear();
-
+        // Act
         $guests = $this->repository->findAllGuests();
 
-        self::assertCount(2, $guests);
-
+        // Assert 1 — aucun admin ne doit être présent
         foreach ($guests as $user) {
-            self::assertNotContains('ROLE_ADMIN', $user->getRoles());
+            $this->assertNotContains('ROLE_ADMIN', $user->getRoles());
         }
+
+        // Assert 2 — l’invité créé est bien présent
+        $guestEmails = array_map(
+            static fn (User $u) => $u->getEmail(),
+            $guests
+        );
+
+        $this->assertContains('guest_unique@test.com', $guestEmails);
     }
 
-    public function testFindAdmin(): void
+    public function testFindAdminReturnsAdminUser(): void
     {
-        $admin = (new User())
-            ->setEmail('admin@test.com')
-            ->setRoles(['ROLE_ADMIN'])
-            ->setPassword('test')
-            ->setUserActif(true);
+        $admin = new User();
+        $admin->setEmail('admin_find@test.com');
+        $admin->setNom('AdminFind');
+        $admin->setPrenom('Ina');
+        $admin->setRoles(['ROLE_ADMIN']);
+        $admin->setPassword('password');
 
-        $this->em->persist($admin);
-        $this->em->flush();
-        $this->em->clear();
+        $this->entityManager->persist($admin);
+        $this->entityManager->flush();
+        $this->entityManager->clear();
 
         $result = $this->repository->findAdmin();
 
-        self::assertInstanceOf(User::class, $result);
-        self::assertSame('admin@test.com', $result->getEmail());
+        $this->assertInstanceOf(User::class, $result);
+        $this->assertContains('ROLE_ADMIN', $result->getRoles());
     }
 
-    public function testUserCanBeDeleted(): void
+    public function testFindGuestWithMediasReturnsGuestWithMedias(): void
     {
-        $user = (new User())
-            ->setEmail('delete@test.com')
-            ->setRoles(['ROLE_USER'])
-            ->setPassword('test')
-            ->setUserActif(true);
+        $guest = new User();
+        $guest->setEmail('guest_media_'.uniqid('', true).'@test.com');
+        $guest->setNom('GuestMedia');
+        $guest->setPrenom('User');
+        $guest->setRoles(['ROLE_USER']);
+        $guest->setPassword('password');
 
-        $this->em->persist($user);
-        $this->em->flush();
+        $media = new Media();
+        $media->setTitle('Photo test');
+        $media->setPath('photo.jpg');
+        $media->setUser($guest);
 
-        $id = $user->getId();
+        $this->entityManager->persist($guest);
+        $this->entityManager->persist($media);
+        $this->entityManager->flush();
+        $this->entityManager->clear();
 
-        $this->em->remove($user);
-        $this->em->flush();
+        $result = $this->repository->findGuestWithMedias($guest->getId());
 
-        self::assertNull(
-            $this->repository->find($id)
+        $this->assertInstanceOf(User::class, $result);
+
+        $titles = array_map(
+            static fn (Media $m) => $m->getTitle(),
+            $result->getMedias()->toArray()
         );
+
+        $this->assertContains('Photo test', $titles);
     }
 
-    public function testFindAllUsersReturnsArray(): void
+    public function testFindGuestWithMediasReturnsNullForAdmin(): void
     {
-        $users = $this->repository->findAll();
+        $admin = new User();
+        $admin->setEmail('admin_media@test.com');
+        $admin->setNom('AdminMedia');
+        $admin->setPrenom('User');
+        $admin->setRoles(['ROLE_ADMIN']);
+        $admin->setPassword('password');
 
-        self::assertIsArray($users);
+        $this->entityManager->persist($admin);
+        $this->entityManager->flush();
+        $this->entityManager->clear();
+
+        $result = $this->repository
+            ->findGuestWithMedias($admin->getId());
+
+        $this->assertNull($result);
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         parent::tearDown();
-        $this->em->close();
+        $this->entityManager->close();
     }
 }

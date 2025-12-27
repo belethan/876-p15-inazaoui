@@ -86,4 +86,14 @@ class UserTest extends TestCase
 
         $this->assertTrue(true);
     }
+
+    public function testGetFullNameReturnsFormattedName(): void
+    {
+        $user = new User();
+
+        $user->setPrenom('Ina');
+        $user->setNom('Zaoui');
+
+        $this->assertSame('Ina Zaoui', $user->getFullName());
+    }
 }
