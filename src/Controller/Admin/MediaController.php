@@ -9,7 +9,6 @@ use App\Entity\User;
 use App\Form\MediaType;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -73,6 +72,7 @@ class MediaController extends AbstractController
 
             if (!$uploadedFile) {
                 $this->addFlash('danger', 'Aucun fichier envoyé.');
+
                 return $this->redirectToRoute('admin_media_index');
             }
 
@@ -89,16 +89,16 @@ class MediaController extends AbstractController
 
             $extension = $uploadedFile->guessExtension() ?? 'jpg';
             $filename = sprintf('%04d.%s', $media->getId(), $extension);
-            $targetPath = $this->getParameter('upload_directory') . '/' . $filename;
+            $targetPath = $this->getParameter('upload_directory').'/'.$filename;
 
             try {
                 $this->compressImage($uploadedFile->getPathname(), $targetPath);
-                $media->setPath('uploads/' . $filename);
+                $media->setPath('uploads/'.$filename);
                 $em->flush();
 
                 $this->addFlash('success', 'Image ajoutée avec succès.');
             } catch (\Throwable $e) {
-                $this->addFlash('danger', 'Erreur image : ' . $e->getMessage());
+                $this->addFlash('danger', 'Erreur image : '.$e->getMessage());
             }
 
             return $this->redirectToRoute('admin_media_index');
@@ -135,7 +135,7 @@ class MediaController extends AbstractController
 
             if ($uploadedFile) {
                 if ($media->getPath()) {
-                    $oldPath = $this->getParameter('kernel.project_dir') . '/public/' . $media->getPath();
+                    $oldPath = $this->getParameter('kernel.project_dir').'/public/'.$media->getPath();
                     if (file_exists($oldPath)) {
                         unlink($oldPath);
                     }
@@ -143,10 +143,10 @@ class MediaController extends AbstractController
 
                 $extension = $uploadedFile->guessExtension() ?? 'jpg';
                 $filename = sprintf('%04d.%s', $media->getId(), $extension);
-                $target = $this->getParameter('upload_directory') . '/' . $filename;
+                $target = $this->getParameter('upload_directory').'/'.$filename;
 
                 $this->compressImage($uploadedFile->getPathname(), $target);
-                $media->setPath('uploads/' . $filename);
+                $media->setPath('uploads/'.$filename);
             }
 
             $em->flush();
@@ -168,11 +168,12 @@ class MediaController extends AbstractController
         if (
             ('test' !== $this->getParameter('kernel.environment'))
             && !$this->isCsrfTokenValid(
-                'delete_media_' . $media->getId(),
+                'delete_media_'.$media->getId(),
                 (string) $request->request->get('_token')
             )
         ) {
             $this->addFlash('danger', 'Jeton CSRF invalide.');
+
             return $this->redirectToRoute('admin_media_index');
         }
 
@@ -181,11 +182,12 @@ class MediaController extends AbstractController
             && $media->getUser() !== $this->getUser()
         ) {
             $this->addFlash('danger', 'Suppression non autorisée.');
+
             return $this->redirectToRoute('admin_media_index');
         }
 
         if ($media->getPath()) {
-            $absolutePath = $this->getParameter('kernel.project_dir') . '/public/' . $media->getPath();
+            $absolutePath = $this->getParameter('kernel.project_dir').'/public/'.$media->getPath();
             if (file_exists($absolutePath)) {
                 unlink($absolutePath);
             }
@@ -202,8 +204,8 @@ class MediaController extends AbstractController
     private function compressImage(string $source, string $destination, int $quality = 85): void
     {
         $info = getimagesize($source);
-        if ($info === false) {
-            throw new RuntimeException('Fichier image invalide.');
+        if (false === $info) {
+            throw new \RuntimeException('Fichier image invalide.');
         }
 
         $mime = $info['mime'];
@@ -219,7 +221,7 @@ class MediaController extends AbstractController
                 $destination,
                 6
             ),
-            default => throw new RuntimeException('Format image non supporté'),
+            default => throw new \RuntimeException('Format image non supporté'),
         };
     }
 }

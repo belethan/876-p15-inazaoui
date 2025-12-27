@@ -66,7 +66,7 @@ class LoginSuccessHandlerTest extends WebTestCase
         $urlGenerator = $container->get(UrlGeneratorInterface::class);
 
         $guest = new User();
-        $guest->setEmail('guest_' . uniqid('', true) . '@test.fr');
+        $guest->setEmail('guest_'.uniqid('', true).'@test.fr');
         $guest->setPassword('test');
         $guest->setRoles(['ROLE_GUEST']);
         $guest->setUserActif(true);

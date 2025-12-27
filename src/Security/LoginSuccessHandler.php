@@ -13,8 +13,9 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerI
 final class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
     public function __construct(
-        private readonly UrlGeneratorInterface $urlGenerator
-    ) {}
+        private readonly UrlGeneratorInterface $urlGenerator,
+    ) {
+    }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token): RedirectResponse
     {

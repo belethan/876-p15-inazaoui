@@ -17,7 +17,7 @@ class AdminAccessTest extends WebTestCase
 
         // 🔑 Utilisateur ROLE_USER
         $user = new User();
-        $user->setEmail('user_' . uniqid('', true) . '@test.com');
+        $user->setEmail('user_'.uniqid('', true).'@test.com');
         $user->setRoles(['ROLE_USER']);
         $user->setPassword('test');
 
@@ -39,7 +39,7 @@ class AdminAccessTest extends WebTestCase
 
         // 🔑 Utilisateur ROLE_USER
         $user = new User();
-        $user->setEmail('user_' . uniqid('', true) . '@test.com');
+        $user->setEmail('user_'.uniqid('', true).'@test.com');
         $user->setRoles(['ROLE_USER']);
         $user->setPassword('test');
 
