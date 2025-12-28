@@ -30,6 +30,9 @@ class Album
         cascade: ['persist', 'remove'],
         orphanRemoval: true
     )]
+    /**
+     * @phpstan-var Collection<int, Media>
+     */
     private Collection $media;
 
     public function __construct()
@@ -66,7 +69,9 @@ class Album
         return $this;
     }
 
-    /** @return Collection<int, Media> */
+    /**
+     * @return Collection<int, Media>
+     */
     public function getMedia(): Collection
     {
         return $this->media;

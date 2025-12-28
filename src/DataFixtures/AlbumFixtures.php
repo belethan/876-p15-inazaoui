@@ -14,6 +14,8 @@ class AlbumFixtures extends Fixture implements DependentFixtureInterface
 {
     /**
      * Groupe "album".
+     *
+     * @return string[]
      */
     public static function getGroups(): array
     {
@@ -38,6 +40,8 @@ class AlbumFixtures extends Fixture implements DependentFixtureInterface
 
     /**
      * Force l’exécution de UserFixtures AVANT.
+     *
+     * @return array<class-string>
      */
     public function getDependencies(): array
     {

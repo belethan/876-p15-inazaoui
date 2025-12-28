@@ -25,7 +25,7 @@ class UserTestFixtures extends Fixture
     {
         $user = new User();
 
-        // ⚠️ EMAIL DIFFÉRENT DE L’ADMIN APPLICATIF
+        // EMAIL DIFFÉRENT DE L’ADMIN APPLICATIF
         $user->setEmail('ina.test@free.fr');
         $user->setRoles(['ROLE_ADMIN']);
         $user->setUserActif(true);
@@ -41,6 +41,9 @@ class UserTestFixtures extends Fixture
         $this->addReference(self::INA_USER, $user);
     }
 
+    /**
+     * @return string[]
+     */
     public static function getGroups(): array
     {
         return ['test'];

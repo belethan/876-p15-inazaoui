@@ -42,7 +42,7 @@ class UserFixtures extends Fixture
 
         $manager->persist($admin);
 
-        //  Référence utilisée par AlbumFixtures
+        // Référence utilisée par AlbumFixtures
         $this->addReference(self::REF_USER_ADMIN, $admin);
 
         /*
@@ -73,6 +73,9 @@ class UserFixtures extends Fixture
         $manager->flush();
     }
 
+    /**
+     * @return string[]
+     */
     public static function getGroups(): array
     {
         return ['app'];
