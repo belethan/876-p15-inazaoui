@@ -75,6 +75,7 @@ Le rapport HTML est accessible dans :
 ## Choix d’implémentation clés
 
 * Suppression de l’effet N+1 via des requêtes Doctrine optimisées (JOIN FETCH)
+* L'effet N+1 est une première requête récupère une liste d’éléments, puis une requête SQL supplémentaire est exécutée pour chaque élément de la liste pour récupérer les données liées à cet élément.
 * Séparation claire des responsabilités (Controller / Repository / Templates)
 * Utilisation du Profiler Symfony comme outil principal d’analyse
 * Optimisation des performances avant tout via la couche Data, non via Twig
@@ -82,6 +83,48 @@ Le rapport HTML est accessible dans :
 ## Performance
 
 Les performances ont été mesurées à l’aide du Profiler Symfony en environnement dev, puis comparées avec un environnement prod.
+
+## Conseils d’utilisation du code
+Architecture générale
+
+Le projet suit une architecture Symfony classique :
+
+* Controllers : gestion des requêtes HTTP uniquement
+* Repositories : accès aux données et requêtes optimisées
+* Entities : modèle de données
+* Templates Twig : rendu HTML
+  
+## Gestion des données (Doctrine)
+
+Bonnes pratiques :
+* Centraliser les requêtes complexes dans les repositories.
+* Éviter les accès implicites aux relations (risque requêtes multiples).
+* Préférer des méthodes explicites (findWithRelations, etc.).
+
+Tester systématiquement les requêtes avec le Profiler Symfony.
+
+## Sécurité et permissions
+
+Les règles d’accès sont définies dans security.yaml.
+Toute modification de rôles ou d’accès doit être :
+
+    * justifiée,
+    * testée (tests fonctionnels),
+    * vérifiée via le Profiler.
+
+Ne jamais exposer :
+* des routes sensibles sans contrôle d’accès,
+* des données appartenant à un autre utilisateur.
+
+## Maintenance du code
+Ajout de nouvelles fonctionnalités
+
+Lors de l’ajout d’une fonctionnalité :
+* Créer une branche dédiée.
+* Implémenter la fonctionnalité.
+* Ajouter les tests associés.
+* Vérifier les performances si une requête Doctrine est impliquée.
+* Mettre à jour la documentation si nécessaire.
 
 ### Principaux indicateurs analysés :
 
@@ -91,23 +134,23 @@ Les performances ont été mesurées à l’aide du Profiler Symfony en environn
 * Temps de rendu Twig
 * Consommation mémoire
 
-Les résultats montrent une nette amélioration de la scalabilité et une stabilité accrue des performances sous Symfony 7.4.
+Performance
+
+* Toujours analyser les nouvelles pages avec le Profiler Symfony.
+* Surveiller :
+  * le nombre de requêtes SQL,
+  * le temps d’exécution,
+  * la consommation mémoire.
+
+Toute régression de performance doit être corrigée avant validation.
 
 
-| Indicateur     | Symfony 5.4 | Symfony 7.4  <br /> 
-|----------------|-------------|---------------------|
-| Temps total    | 134 ms      | 608 ms              |
-| Initialisation | 5 ms        | 186 ms              |
-| Requêtes SQL   | 102         | 2                   |
-| Temps SQL      | 34,8 ms     | 34,8 ms             |
-| Temps Twig     | 116 ms      | 116 ms              |
-| Scalabilité	 | Linéaire    | Stable              |
 
 ## Conclusion
 
 Ce projet de refonte avait pour objectif d’identifier et de corriger des problèmes de performance sur une application Symfony initialement développée en version 5.4. L’analyse s’est concentrée en particulier sur la page Invités, dont les temps de chargement augmentaient de manière significative avec la volumétrie des données.
 
-L’utilisation du profiler Symfony a permis d’identifier précisément l’origine du problème : un effet N+1 lié au chargement paresseux des relations Doctrine. Cette implémentation entraînait un nombre excessif de requêtes SQL (102 requêtes pour seulement 2 requêtes distinctes), impactant directement le temps de rendu Twig et la scalabilité de la page.
+L’utilisation du profiler Symfony a permis d’identifier précisément l’origine du problème : un effet N+1 lié au chargement récursif des relations Doctrine. Cette implémentation entraînait un nombre excessif de requêtes SQL (102 requêtes pour seulement 2 requêtes distinctes), impactant directement le temps de rendu Twig et la scalabilité de la page.
 
 La migration vers Symfony 7.4, combinée à une refonte de la stratégie de chargement des données, a permis de supprimer totalement cet effet N+1. Le nombre de requêtes SQL a été réduit à 2, le temps d’accès à la base divisé par plus de trois, et le temps de rendu Twig fortement diminué. Les performances deviennent ainsi stables et indépendantes de la volumétrie de données.
 
