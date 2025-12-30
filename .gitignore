@@ -17,6 +17,7 @@
 ###> symfony/phpunit-bridge ###
 .phpunit.result.cache
 /phpunit.xml
+
 ###< symfony/phpunit-bridge ###
 
 # PHPUnit cache & coverage
@@ -25,6 +26,8 @@
 ###> symfony/asset-mapper ###
 /public/assets/
 /assets/vendor/
+/public/coverage/
+
 ###< symfony/asset-mapper ###
 
 ###> phpstan/phpstan ###
