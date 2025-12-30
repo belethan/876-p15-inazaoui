@@ -150,6 +150,17 @@ Ce taux dépasse le seuil minimal requis de 70 %. La stratégie de tests a été
 les couches critiques de l’application (Formulaires, Sécurité et Entités), afin de garantir la stabilité fonctionnelle 
 sans introduire de complexité excessive ni de tests redondants.
 
+
+| Couche / Composant | Lignes couvertes | Fonctions / Méthodes | Classes / Traits | Commentaire                      |
+| ------------------ | ---------------- | -------------------- | ---------------- | -------------------------------- |
+| **Global**         | **78,10 %**      | 82,61 %              | 50,00 %          | Objectif ≥ 70 % atteint          |
+| Entities           | 77,38 %          | 89,36 %              | 66,67 %          | Accès aux données sécurisés      |
+| Forms              | 85,05 %          | 71,43 %              | 50,00 %          | Couche critique fortement testée |
+| Repositories       | 64,71 %          | 63,64 %              | 33,33 %          | Tests ciblés sans sur-mock       |
+| Security           | 93,33 %          | 75,00 %              | 50,00 %          | Priorité donnée à la sécurité    |
+
+
+
 ## Conclusion
 
 Ce projet de refonte avait pour objectif d’identifier et de corriger des problèmes de performance sur une application Symfony initialement développée en version 5.4. L’analyse s’est concentrée en particulier sur la page Invités, dont les temps de chargement augmentaient de manière significative avec la volumétrie des données.
