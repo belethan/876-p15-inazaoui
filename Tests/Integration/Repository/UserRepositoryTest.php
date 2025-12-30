@@ -141,4 +141,19 @@ class UserRepositoryTest extends KernelTestCase
         parent::tearDown();
         $this->entityManager->close();
     }
+
+
+    public function testFindAllGuestsReturnsArray(): void
+    {
+        self::bootKernel();
+
+        $repo = static::getContainer()
+            ->get('doctrine')
+            ->getRepository(User::class);
+
+        $result = $repo->findAllGuests();
+
+        self::assertIsArray($result);
+    }
+
 }

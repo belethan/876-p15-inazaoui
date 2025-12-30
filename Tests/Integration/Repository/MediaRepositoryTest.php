@@ -66,4 +66,18 @@ class MediaRepositoryTest extends KernelTestCase
 
         $this->assertIsArray($result);
     }
+
+    public function testFindByUserDoesNotCrash(): void
+    {
+        self::bootKernel();
+
+        $repo = static::getContainer()
+            ->get('doctrine')
+            ->getRepository(Media::class);
+
+        $result = $repo->findBy([]);
+
+        self::assertIsArray($result);
+    }
+
 }

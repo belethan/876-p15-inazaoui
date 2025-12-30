@@ -92,4 +92,16 @@ class AlbumRepositoryTest extends KernelTestCase
         parent::tearDown();
         $this->em->close();
     }
+
+    public function testRepositoryIsInstantiable(): void
+    {
+        self::bootKernel();
+
+        $repo = static::getContainer()
+            ->get('doctrine')
+            ->getRepository(Album::class);
+
+        self::assertInstanceOf(AlbumRepository::class, $repo);
+    }
+
 }
